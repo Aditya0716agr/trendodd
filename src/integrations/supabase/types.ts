@@ -9,7 +9,201 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      markets: {
+        Row: {
+          category: string
+          close_date: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          liquidity: number
+          no_price: number
+          question: string
+          status: string
+          updated_at: string
+          volume: number
+          yes_price: number
+        }
+        Insert: {
+          category: string
+          close_date: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          liquidity?: number
+          no_price?: number
+          question: string
+          status?: string
+          updated_at?: string
+          volume?: number
+          yes_price?: number
+        }
+        Update: {
+          category?: string
+          close_date?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          liquidity?: number
+          no_price?: number
+          question?: string
+          status?: string
+          updated_at?: string
+          volume?: number
+          yes_price?: number
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          average_price: number
+          created_at: string
+          id: string
+          market_id: string
+          position: string
+          shares: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_price: number
+          created_at?: string
+          id?: string
+          market_id: string
+          position: string
+          shares: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_price?: number
+          created_at?: string
+          id?: string
+          market_id?: string
+          position?: string
+          shares?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "positions_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_history: {
+        Row: {
+          id: string
+          market_id: string
+          no_price: number
+          timestamp: string
+          yes_price: number
+        }
+        Insert: {
+          id?: string
+          market_id: string
+          no_price: number
+          timestamp?: string
+          yes_price: number
+        }
+        Update: {
+          id?: string
+          market_id?: string
+          no_price?: number
+          timestamp?: string
+          yes_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          updated_at: string
+          username: string | null
+          wallet_balance: number
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          updated_at?: string
+          username?: string | null
+          wallet_balance?: number
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          balance: number
+          created_at: string
+          id: string
+          market_id: string
+          position: string | null
+          price: number | null
+          shares: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance: number
+          created_at?: string
+          id?: string
+          market_id: string
+          position?: string | null
+          price?: number | null
+          shares?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance?: number
+          created_at?: string
+          id?: string
+          market_id?: string
+          position?: string | null
+          price?: number | null
+          shares?: number | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
