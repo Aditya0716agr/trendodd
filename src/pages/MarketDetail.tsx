@@ -11,8 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Market } from "@/types/market";
-import { mockMarkets, mockUserData } from "@/data/mockMarkets";
 import { Users, DollarSign, ArrowLeftRight, Clock, AlertCircle, ArrowLeft } from "lucide-react";
+import { getMarketById } from "@/services/market";
+import { executeTrade, getUserWalletBalance } from "@/services/trading";
+import { useAuth } from "@/hooks/use-auth";
 
 const MarketDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,32 +24,53 @@ const MarketDetail = () => {
   const [position, setPosition] = useState<"yes" | "no">("yes");
   const [shares, setShares] = useState("1");
   const [cost, setCost] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
+  const { user, loading } = useAuth();
   
   // Fetch market data
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const foundMarket = mockMarkets.find(m => m.id === id);
+    const fetchMarket = async () => {
+      if (!id) return;
       
-      if (foundMarket) {
-        setMarket(foundMarket);
-      } else {
-        toast.error("Market not found");
+      try {
+        setIsLoading(true);
+        const marketData = await getMarketById(id);
+        
+        if (marketData) {
+          setMarket(marketData);
+        } else {
+          toast.error("Market not found");
+          navigate("/markets");
+        }
+      } catch (error) {
+        console.error("Error fetching market:", error);
+        toast.error("Failed to load market data");
         navigate("/markets");
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-      
-      // Check if user is logged in
-      const userToken = localStorage.getItem("userToken");
-      if (userToken) {
-        setIsLoggedIn(true);
-        setWalletBalance(mockUserData.walletBalance);
-      }
-    }, 300);
+    };
+    
+    fetchMarket();
   }, [id, navigate]);
+  
+  // Fetch wallet balance if user is logged in
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (loading) return;
+      
+      if (user) {
+        try {
+          const balance = await getUserWalletBalance();
+          setWalletBalance(balance);
+        } catch (error) {
+          console.error("Error fetching wallet balance:", error);
+        }
+      }
+    };
+    
+    fetchBalance();
+  }, [user, loading]);
   
   // Calculate cost when shares or position changes
   useEffect(() => {
@@ -84,10 +107,15 @@ const MarketDetail = () => {
   };
   
   // Handle buy action
-  const handleBuy = () => {
-    if (!isLoggedIn) {
+  const handleBuy = async () => {
+    if (!user) {
       toast.error("Please log in to trade");
       navigate("/login");
+      return;
+    }
+    
+    if (!market || !id) {
+      toast.error("Market data not available");
       return;
     }
     
@@ -103,9 +131,24 @@ const MarketDetail = () => {
       return;
     }
     
-    // Simulate buy transaction
-    toast.success(`Successfully bought ${sharesNum} ${position.toUpperCase()} shares`);
-    setWalletBalance(prev => prev - cost);
+    try {
+      const result = await executeTrade({
+        marketId: id,
+        position,
+        shares: sharesNum,
+        price: position === "yes" ? market.yesPrice : market.noPrice,
+        type: "buy"
+      });
+      
+      if (result) {
+        // Update wallet balance after successful trade
+        const newBalance = await getUserWalletBalance();
+        setWalletBalance(newBalance);
+      }
+    } catch (error) {
+      console.error("Error executing trade:", error);
+      toast.error("Failed to execute trade");
+    }
   };
   
   if (isLoading) {
@@ -298,7 +341,7 @@ const MarketDetail = () => {
                       <span className="font-medium">{shares && !isNaN(parseFloat(shares)) ? (parseFloat(shares) * 100).toFixed(0) : 0} coins</span>
                     </div>
                     
-                    {isLoggedIn && (
+                    {user && (
                       <div className="text-sm text-muted-foreground mb-4">
                         Your balance: {walletBalance.toFixed(0)} coins
                       </div>
@@ -311,7 +354,7 @@ const MarketDetail = () => {
                       Buy {position.toUpperCase()} Shares
                     </Button>
                     
-                    {!isLoggedIn && (
+                    {!user && (
                       <p className="text-xs text-muted-foreground mt-3 text-center">
                         Please log in to trade on this market
                       </p>

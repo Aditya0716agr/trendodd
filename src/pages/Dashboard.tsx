@@ -19,7 +19,9 @@ import {
   ArrowDownRight
 } from "lucide-react";
 import { UserPosition, Transaction } from "@/types/market";
-import { mockUserData } from "@/data/mockMarkets";
+import { getUserPositions, getUserTransactions, getUserWalletBalance } from "@/services/trading";
+import { useAuth } from "@/hooks/use-auth";
+import { signOut } from "@/services/auth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,29 +29,42 @@ const Dashboard = () => {
   const [walletBalance, setWalletBalance] = useState(0);
   const [positions, setPositions] = useState<UserPosition[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { user, loading } = useAuth();
   
   useEffect(() => {
-    // Check if user is logged in
-    const userToken = localStorage.getItem("userToken");
+    const fetchData = async () => {
+      if (loading) return;
+      
+      if (!user) {
+        toast.error("Please log in to access the dashboard");
+        navigate("/login");
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const [positionsData, transactionsData, balance] = await Promise.all([
+          getUserPositions(),
+          getUserTransactions(),
+          getUserWalletBalance()
+        ]);
+        
+        setPositions(positionsData);
+        setTransactions(transactionsData);
+        setWalletBalance(balance);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    if (!userToken) {
-      toast.error("Please log in to access the dashboard");
-      navigate("/login");
-      return;
-    }
-    
-    // Simulate data loading
-    setTimeout(() => {
-      setWalletBalance(mockUserData.walletBalance);
-      setPositions(mockUserData.positions as UserPosition[]);
-      setTransactions(mockUserData.transactions as Transaction[]);
-      setIsLoading(false);
-    }, 500);
-  }, [navigate]);
+    fetchData();
+  }, [user, loading, navigate]);
   
-  const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    toast.success("You have been logged out");
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
   
