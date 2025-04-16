@@ -57,8 +57,6 @@ const MarketDetail = () => {
   // Fetch wallet balance if user is logged in
   useEffect(() => {
     const fetchBalance = async () => {
-      if (loading) return;
-      
       if (user) {
         try {
           const balance = await getUserWalletBalance();
@@ -70,7 +68,7 @@ const MarketDetail = () => {
     };
     
     fetchBalance();
-  }, [user, loading]);
+  }, [user]);
   
   // Calculate cost when shares or position changes
   useEffect(() => {
@@ -79,7 +77,7 @@ const MarketDetail = () => {
       const sharesNum = parseFloat(shares);
       
       if (!isNaN(sharesNum) && sharesNum > 0) {
-        setCost(sharesNum * price * 100); // Multiply by 100 to convert to cents
+        setCost(sharesNum * price);
       } else {
         setCost(0);
       }
@@ -97,7 +95,7 @@ const MarketDetail = () => {
   
   // Format chart data
   const formatChartData = () => {
-    if (!market) return [];
+    if (!market || !market.priceHistory || market.priceHistory.length === 0) return [];
     
     return market.priceHistory.map(point => ({
       date: format(parseISO(point.timestamp), "MMM d"),
@@ -144,6 +142,12 @@ const MarketDetail = () => {
         // Update wallet balance after successful trade
         const newBalance = await getUserWalletBalance();
         setWalletBalance(newBalance);
+        
+        // Refresh market data to show updated prices
+        const updatedMarket = await getMarketById(id);
+        if (updatedMarket) {
+          setMarket(updatedMarket);
+        }
       }
     } catch (error) {
       console.error("Error executing trade:", error);
@@ -211,35 +215,41 @@ const MarketDetail = () => {
             <div className="bg-card rounded-lg border p-4 mb-8">
               <h2 className="text-lg font-semibold mb-4">Price History</h2>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formatChartData()}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={[0, 100]} unit="¢" />
-                    <Tooltip 
-                      formatter={(value) => [`${value}¢`, '']}
-                      labelFormatter={(label) => `Date: ${label}`} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="yes" 
-                      stroke="#10B981" 
-                      name="YES"
-                      strokeWidth={2}
-                      dot={false}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="no" 
-                      stroke="#EF4444" 
-                      name="NO"
-                      strokeWidth={2}
-                      dot={false}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {market.priceHistory && market.priceHistory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={formatChartData()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="date" />
+                      <YAxis domain={[0, 100]} unit="¢" />
+                      <Tooltip 
+                        formatter={(value) => [`${value}¢`, '']}
+                        labelFormatter={(label) => `Date: ${label}`} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="yes" 
+                        stroke="#10B981" 
+                        name="YES"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="no" 
+                        stroke="#EF4444" 
+                        name="NO"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    No price history available
+                  </div>
+                )}
               </div>
             </div>
             
@@ -250,7 +260,7 @@ const MarketDetail = () => {
                   <DollarSign className="h-5 w-5 text-muted-foreground mr-1" />
                   <h3 className="font-medium">Volume</h3>
                 </div>
-                <p className="text-2xl font-bold">{(market.volume / 1000).toFixed(0)}K</p>
+                <p className="text-2xl font-bold">{market.volume > 1000 ? (market.volume / 1000).toFixed(1) + 'K' : market.volume.toFixed(0)}</p>
               </div>
               
               <div className="bg-card rounded-lg border p-4 text-center">
@@ -258,7 +268,7 @@ const MarketDetail = () => {
                   <ArrowLeftRight className="h-5 w-5 text-muted-foreground mr-1" />
                   <h3 className="font-medium">Liquidity</h3>
                 </div>
-                <p className="text-2xl font-bold">{(market.liquidity / 1000).toFixed(0)}K</p>
+                <p className="text-2xl font-bold">{market.liquidity > 1000 ? (market.liquidity / 1000).toFixed(1) + 'K' : market.liquidity.toFixed(0)}</p>
               </div>
               
               <div className="bg-card rounded-lg border p-4 text-center">
@@ -281,13 +291,13 @@ const MarketDetail = () => {
                   <span className="text-sm text-muted-foreground">Current Prices</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-market-yes/10 p-3 rounded-md text-center">
+                  <div className="bg-green-500/10 p-3 rounded-md text-center">
                     <div className="text-xs mb-1">YES</div>
-                    <div className="text-2xl font-bold price-yes">{Math.round(market.yesPrice * 100)}¢</div>
+                    <div className="text-2xl font-bold text-green-600">{Math.round(market.yesPrice * 100)}¢</div>
                   </div>
-                  <div className="bg-market-no/10 p-3 rounded-md text-center">
+                  <div className="bg-red-500/10 p-3 rounded-md text-center">
                     <div className="text-xs mb-1">NO</div>
-                    <div className="text-2xl font-bold price-no">{Math.round(market.noPrice * 100)}¢</div>
+                    <div className="text-2xl font-bold text-red-600">{Math.round(market.noPrice * 100)}¢</div>
                   </div>
                 </div>
               </div>
@@ -334,29 +344,30 @@ const MarketDetail = () => {
                   <div className="pt-2">
                     <div className="flex justify-between text-sm mb-1">
                       <span>Cost</span>
-                      <span className="font-medium">{cost.toFixed(0)} coins</span>
+                      <span className="font-medium">{cost.toFixed(2)} coins</span>
                     </div>
                     <div className="flex justify-between text-sm mb-4">
                       <span>If correct, you'll get</span>
-                      <span className="font-medium">{shares && !isNaN(parseFloat(shares)) ? (parseFloat(shares) * 100).toFixed(0) : 0} coins</span>
+                      <span className="font-medium">{shares && !isNaN(parseFloat(shares)) ? (parseFloat(shares)).toFixed(0) : 0} coins</span>
                     </div>
                     
                     {user && (
                       <div className="text-sm text-muted-foreground mb-4">
-                        Your balance: {walletBalance.toFixed(0)} coins
+                        Your balance: {walletBalance.toFixed(2)} coins
                       </div>
                     )}
                     
                     <Button 
-                      className={position === "yes" ? "btn-yes w-full" : "btn-no w-full"}
+                      className={`w-full ${position === "yes" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
                       onClick={handleBuy}
+                      disabled={!user || isNaN(parseFloat(shares)) || parseFloat(shares) <= 0 || cost > walletBalance}
                     >
                       Buy {position.toUpperCase()} Shares
                     </Button>
                     
                     {!user && (
                       <p className="text-xs text-muted-foreground mt-3 text-center">
-                        Please log in to trade on this market
+                        Please <a href="/login" className="text-primary hover:underline">log in</a> to trade on this market
                       </p>
                     )}
                   </div>
