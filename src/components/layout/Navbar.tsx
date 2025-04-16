@@ -11,21 +11,21 @@ import {
   X 
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/use-auth";
+import { signOut } from "@/services/auth";
 
 const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isMobile = useIsMobile();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const userToken = localStorage.getItem("userToken");
-    setIsLoggedIn(!!userToken);
-  }, []);
+  const { user } = useAuth();
 
   // Toggle mobile menu
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -71,13 +71,18 @@ const Navbar = () => {
               </Button>
             </Link>
             
-            {isLoggedIn ? (
-              <Link to="/dashboard">
-                <Button size="sm" className="gap-1">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link to="/dashboard">
+                  <Button size="sm" className="gap-1">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  Sign Out
                 </Button>
-              </Link>
+              </div>
             ) : (
               <Link to="/login">
                 <Button size="sm" className="gap-1">
@@ -100,10 +105,15 @@ const Navbar = () => {
             <Link to="/how-it-works" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
               How It Works
             </Link>
-            {isLoggedIn ? (
-              <Link to="/dashboard" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
-                Dashboard
-              </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
+                  Dashboard
+                </Link>
+                <button className="p-2 text-left hover:bg-muted rounded-md" onClick={() => { handleSignOut(); toggleMenu(); }}>
+                  Sign Out
+                </button>
+              </>
             ) : (
               <Link to="/login" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
                 Sign In

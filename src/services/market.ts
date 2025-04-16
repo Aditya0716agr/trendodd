@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Market, MarketCategory, PricePoint } from "@/types/market";
+import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "@/hooks/use-toast";
 
 export async function getMarkets() {
@@ -52,7 +52,7 @@ export async function getMarkets() {
           volume: market.volume,
           liquidity: market.liquidity,
           closeDate: market.close_date,
-          status: market.status,
+          status: market.status as MarketStatus,
           priceHistory,
           totalBets: 0, // Will be calculated later if needed
         };
@@ -111,7 +111,7 @@ export async function getMarketById(id: string): Promise<Market | null> {
       volume: data.volume,
       liquidity: data.liquidity,
       closeDate: data.close_date,
-      status: data.status,
+      status: data.status as MarketStatus,
       priceHistory,
       totalBets: 0, // Will be calculated later if needed
     };

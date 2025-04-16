@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Transaction, UserPosition } from "@/types/market";
+import { Transaction, UserPosition, MarketStatus } from "@/types/market";
 import { toast } from "@/hooks/use-toast";
 
 export interface TradeParams {
@@ -257,7 +258,7 @@ export async function getUserPositions(): Promise<UserPosition[]> {
       potentialProfit: position.position === "yes" 
         ? position.shares * (1 - position.average_price)
         : position.shares * (1 - (1 - position.average_price)),
-      status: position.markets.status,
+      status: position.markets.status as MarketStatus,
     }));
   } catch (error) {
     console.error("Error in getUserPositions:", error);
@@ -297,8 +298,8 @@ export async function getUserTransactions(): Promise<Transaction[]> {
       timestamp: tx.created_at,
       marketId: tx.market_id,
       question: tx.markets.question,
-      type: tx.type,
-      position: tx.position,
+      type: tx.type as "buy" | "sell" | "resolve" | "deposit",
+      position: tx.position as "yes" | "no" | undefined,
       shares: tx.shares,
       price: tx.price,
       amount: tx.amount,
