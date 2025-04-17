@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Medal, Award, TrendingUp, Star, Gift, Target, Zap, Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
 
 export interface LeaderboardUser {
   id: string;
@@ -174,12 +173,10 @@ export const Leaderboard = ({
       <CardContent>
         <div className="space-y-4">
           {users.map((user, index) => (
-            <motion.div 
+            <div 
               key={user.id} 
-              className={`leaderboard-item flex items-center justify-between p-2 rounded-md ${index < 3 ? `rank-${index + 1}` : ''}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className={`leaderboard-item flex items-center justify-between p-2 rounded-md ${index < 3 ? `rank-${index + 1}` : ''} animate-fade-in`}
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-8">
@@ -230,7 +227,7 @@ export const Leaderboard = ({
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           ))}
 
           {users.length === 0 && (

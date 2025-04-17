@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, ArrowUpDown, Search } from "lucide-react";
-import { Market, MarketCategory } from "@/types/market";
+import { Market, MarketCategory, MarketStatus } from "@/types/market";
 import { getMarkets } from "@/services/market";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";

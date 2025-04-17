@@ -28,8 +28,6 @@ const queryClient = new QueryClient({
 
 // Initialize app with seed markets
 const AppRoutes = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Run initialization once

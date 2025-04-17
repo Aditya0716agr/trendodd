@@ -49,16 +49,23 @@ const RequestMarket = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      // Since we can't use market_requests directly (it doesn't exist in the database yet),
+      // we'll use a table we know exists (markets) but just for storage purposes
+      // and add a special status to identify it as a request
       const { error } = await supabase
-        .from("market_requests")
+        .from("markets")
         .insert([
           {
-            title: values.title,
+            question: values.title, // Use question field for the market title
             description: values.description,
-            category: values.category,
-            user_id: user?.id,
-            email: values.email || user?.email,
-            status: "pending",
+            category: values.category || "other",
+            created_by: user?.id,
+            status: "request", // Mark this as a request, not a real market
+            yes_price: 0.5,
+            no_price: 0.5,
+            volume: 0,
+            liquidity: 0,
+            close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
           },
         ]);
 
