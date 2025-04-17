@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -45,7 +46,7 @@ const Markets = () => {
           volume: market.volume,
           liquidity: market.liquidity,
           closeDate: market.close_date,
-          status: market.status,
+          status: market.status as MarketStatus,
           priceHistory: market.priceHistory || [],
           totalBets: market.totalBets || 0
         }));
@@ -107,7 +108,7 @@ const Markets = () => {
   };
 
   const MarketCard = ({ market }: { market: Market }) => (
-    <Link to={`/market/${market.id}`} key={market.id} className="block">
+    <Link to={`/market/${market.id}`} key={market.id} className="block hover:no-underline">
       <div className="market-card flex flex-col md:flex-row md:items-center">
         <div className="flex-grow mb-4 md:mb-0 md:mr-4">
           <div className="flex items-center gap-2 mb-2">
@@ -191,9 +192,9 @@ const Markets = () => {
         
         <Tabs defaultValue="all" className="mb-8" onValueChange={(value) => setActiveCategory(value as MarketCategory | "all")}>
           <TabsList className="mb-6 flex flex-wrap h-auto">
-            <TabsTrigger value="all">All Markets</TabsTrigger>
+            <TabsTrigger value="all" className="transition-all duration-200">All Markets</TabsTrigger>
             {marketCategories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id}>
+              <TabsTrigger key={category.id} value={category.id} className="transition-all duration-200">
                 {category.name}
               </TabsTrigger>
             ))}
@@ -203,7 +204,7 @@ const Markets = () => {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1"
+              className="gap-1 transition-colors duration-200 hover:bg-primary/10"
               onClick={() => toggleSort("volume")}
             >
               Volume
@@ -212,7 +213,7 @@ const Markets = () => {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1"
+              className="gap-1 transition-colors duration-200 hover:bg-primary/10"
               onClick={() => toggleSort("closeDate")}
             >
               Closing Date

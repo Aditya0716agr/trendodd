@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import HowItWorks from "./pages/HowItWorks";
+import RequestMarket from "./pages/RequestMarket";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/request-market" element={<RequestMarket />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
