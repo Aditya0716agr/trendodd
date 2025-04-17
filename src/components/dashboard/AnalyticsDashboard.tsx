@@ -66,6 +66,21 @@ export const AnalyticsDashboard = ({
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
+  // Custom tooltip formatters that handle different value types
+  const formatProfitTooltip = (value: any) => {
+    if (typeof value === 'number') {
+      return [`${value.toFixed(2)}`, 'Profit/Loss'];
+    }
+    return [`${value}`, 'Profit/Loss'];
+  };
+  
+  const formatVolumeTooltip = (value: any) => {
+    if (typeof value === 'number') {
+      return [`${value.toFixed(2)}`, 'Volume'];
+    }
+    return [`${value}`, 'Volume'];
+  };
+  
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -151,7 +166,7 @@ export const AnalyticsDashboard = ({
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`${value.toFixed(2)}`, 'Profit/Loss']} />
+                    <Tooltip formatter={formatProfitTooltip} />
                     <Line 
                       type="monotone" 
                       dataKey="profit" 
@@ -179,7 +194,7 @@ export const AnalyticsDashboard = ({
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`${value.toFixed(2)}`, 'Volume']} />
+                    <Tooltip formatter={formatVolumeTooltip} />
                     <Bar dataKey="volume" fill="#3B82F6" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -212,7 +227,7 @@ export const AnalyticsDashboard = ({
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                    <Tooltip formatter={(value) => typeof value === 'number' ? [`${value}%`, 'Percentage'] : [`${value}`, 'Percentage']} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>

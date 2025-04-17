@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -31,13 +30,26 @@ const Markets = () => {
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
 
-  // Fetch markets on component mount
   useEffect(() => {
     const fetchMarkets = async () => {
       setIsLoading(true);
       try {
         const marketData = await getMarkets();
-        setMarkets(marketData);
+        const typedMarkets: Market[] = marketData.map((market: any) => ({
+          id: market.id,
+          question: market.question,
+          description: market.description || '',
+          category: market.category as MarketCategory,
+          yesPrice: market.yes_price,
+          noPrice: market.no_price,
+          volume: market.volume,
+          liquidity: market.liquidity,
+          closeDate: market.close_date,
+          status: market.status,
+          priceHistory: market.priceHistory || [],
+          totalBets: market.totalBets || 0
+        }));
+        setMarkets(typedMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);
       } finally {
@@ -48,11 +60,9 @@ const Markets = () => {
     fetchMarkets();
   }, []);
 
-  // Apply filters when any filter parameter changes
   useEffect(() => {
     let results = [...markets];
     
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       results = results.filter(market => 
@@ -61,17 +71,14 @@ const Markets = () => {
       );
     }
     
-    // Filter by category
     if (activeCategory !== "all") {
       results = results.filter(market => market.category === activeCategory);
     }
     
-    // Sort the results
     results.sort((a, b) => {
       if (sortField === "volume") {
         return sortDirection === "desc" ? b.volume - a.volume : a.volume - b.volume;
       } else {
-        // Sort by closeDate
         return sortDirection === "desc" 
           ? new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime()
           : new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime();
@@ -81,7 +88,6 @@ const Markets = () => {
     setFilteredMarkets(results);
   }, [searchQuery, activeCategory, sortField, sortDirection, markets]);
 
-  // Toggle sort direction
   const toggleSort = (field: "volume" | "closeDate") => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -91,7 +97,6 @@ const Markets = () => {
     }
   };
 
-  // Format remaining time
   const formatTimeRemaining = (dateString: string) => {
     const closeDate = new Date(dateString);
     const now = new Date();
@@ -101,7 +106,6 @@ const Markets = () => {
     return diffDays > 1 ? `${diffDays} days` : diffDays === 1 ? "1 day" : "< 1 day";
   };
 
-  // Market card component for reuse
   const MarketCard = ({ market }: { market: Market }) => (
     <Link to={`/market/${market.id}`} key={market.id} className="block">
       <div className="market-card flex flex-col md:flex-row md:items-center">
@@ -140,7 +144,6 @@ const Markets = () => {
     </Link>
   );
 
-  // Loading skeleton
   const MarketSkeleton = () => (
     <div className="market-card">
       <div className="flex flex-col md:flex-row md:items-center">
@@ -219,17 +222,14 @@ const Markets = () => {
 
           <div className="grid grid-cols-1 gap-4">
             {isLoading ? (
-              // Show skeletons while loading
               Array.from({ length: 5 }).map((_, index) => (
                 <MarketSkeleton key={index} />
               ))
             ) : filteredMarkets.length > 0 ? (
-              // Show filtered markets
               filteredMarkets.map((market) => (
                 <MarketCard key={market.id} market={market} />
               ))
             ) : (
-              // Show no markets found message
               <div className="text-center py-12 border rounded-lg bg-muted/50">
                 <p className="text-muted-foreground">No markets found matching your criteria.</p>
               </div>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -15,8 +14,8 @@ import { ForumCard, ForumPost } from "@/components/community/ForumCard";
 import { Leaderboard, LeaderboardUser } from "@/components/gamification/Leaderboard";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
 
-// Mock forum posts (would come from API in a real app)
 const mockForumPosts: ForumPost[] = [
   {
     id: "1",
@@ -50,7 +49,6 @@ const mockForumPosts: ForumPost[] = [
   }
 ];
 
-// Mock leaderboard data (would come from API in a real app)
 const mockLeaderboardUsers: LeaderboardUser[] = [
   {
     id: "1",
@@ -107,25 +105,20 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
 
-  // Calculate analytics metrics
   const calculateMetrics = () => {
-    // Calculate profit/loss
     const totalProfitLoss = transactions
       .filter(t => t.type === "resolve")
       .reduce((sum, t) => sum + t.amount, 0);
     
-    // Calculate win rate
     const resolvedBets = transactions.filter(t => t.type === "resolve");
     const winRate = resolvedBets.length > 0
       ? (resolvedBets.filter(t => t.amount > 0).length / resolvedBets.length) * 100
       : 0;
     
-    // Count active positions
     const activePositions = positions.filter(p => 
       p.status !== "resolved_yes" && p.status !== "resolved_no" && p.status !== "cancelled"
     ).length;
     
-    // Count resolved positions
     const resolvedPositions = positions.filter(p => 
       p.status === "resolved_yes" || p.status === "resolved_no"
     ).length;
