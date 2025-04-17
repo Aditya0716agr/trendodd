@@ -1,128 +1,202 @@
-
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { 
-  LayoutDashboard, 
-  PieChart, 
-  Search, 
-  User,
-  Menu, 
-  X 
-} from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ModeToggle } from "@/components/mode-toggle";
+import { useToast } from "@/hooks/use-toast";
 import { signOut } from "@/services/auth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Coin } from "lucide-react";
+import { useEffect } from "react";
+import { getUserWalletBalance } from "@/services/trading";
+
+const NavItems = ({ pathname }: { pathname: string }) => (
+  <div className="mx-auto w-full max-w-screen-xl space-x-4 py-4 md:block">
+    <Button variant="ghost" size="sm" asChild>
+      <a href="/" className={pathname === "/" ? "font-bold" : ""}>
+        Home
+      </a>
+    </Button>
+    <Button variant="ghost" size="sm" asChild>
+      <a href="/markets" className={pathname === "/markets" ? "font-bold" : ""}>
+        Markets
+      </a>
+    </Button>
+    <Button variant="ghost" size="sm" asChild>
+      <a href="/how-it-works" className={pathname === "/how-it-works" ? "font-bold" : ""}>
+        How it works
+      </a>
+    </Button>
+    {/* Update the import and NavItems section in the Navbar component
+to include a link to the Request Market page.
+
+In the NavItems array, add:
+{
+  name: "Request Market",
+  href: "/request-market",
+  current: pathname === "/request-market",
+}, */}
+{
+  name: "Request Market",
+  href: "/request-market",
+  current: pathname === "/request-market",
+},
+    <Button variant="ghost" size="sm" asChild>
+      <a href="/request-market" className={pathname === "/request-market" ? "font-bold" : ""}>
+        Request Market
+      </a>
+    </Button>
+  </div>
+);
 
 const Navbar = () => {
+  const { user, session, loading } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { pathname } = location;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const { user } = useAuth();
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
 
-  // Toggle mobile menu
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      setIsLoadingBalance(true);
+      try {
+        const balance = await getUserWalletBalance();
+        setWalletBalance(balance);
+      } catch (error) {
+        console.error("Failed to fetch wallet balance:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch wallet balance.",
+          variant: "destructive",
+        });
+        setWalletBalance(0);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    if (user) {
+      fetchWalletBalance();
+    } else {
+      setWalletBalance(null);
+      setIsLoadingBalance(false);
+    }
+  }, [user, toast]);
 
   const handleSignOut = async () => {
-    await signOut();
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      navigate("/login");
+      toast({
+        description: "You have been successfully signed out.",
+      });
+    }
+  };
+
+  const getInitials = (email: string) => {
+    return email
+      .split('@')[0]
+      .split(' ')
+      .map((s) => s[0])
+      .join('')
+      .toUpperCase();
   };
 
   return (
-    <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-            <PieChart className="h-6 w-6" />
-            <span>TrendOdds</span>
-          </Link>
-          
-          {!isMobile && (
-            <nav className="flex gap-4">
-              <Link to="/markets" className="text-foreground/70 hover:text-foreground transition-colors">
-                Markets
-              </Link>
-              <Link to="/how-it-works" className="text-foreground/70 hover:text-foreground transition-colors">
-                How It Works
-              </Link>
-            </nav>
-          )}
-        </div>
-        
-        {isMobile ? (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleMenu}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link to="/markets">
-              <Button variant="outline" size="sm" className="gap-1">
-                <Search className="h-4 w-4" />
-                Explore Markets
-              </Button>
-            </Link>
-            
-            {user ? (
-              <div className="flex items-center gap-2">
-                <Link to="/dashboard">
-                  <Button size="sm" className="gap-1">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
+    <div className="bg-background sticky top-0 z-50 border-b">
+      <div className="container flex items-center justify-between">
+        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+          <SheetTrigger className="md:hidden">
+            <Button variant="ghost" size="sm">
+              Menu
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="sm:w-64">
+            <SheetHeader className="text-left">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Explore the TrendOdds platform.
+              </SheetDescription>
+            </SheetHeader>
+            <NavItems pathname={pathname} />
+            <div className="mt-6">
+              {user ? (
+                <div className="flex flex-col space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Signed in as
+                  </p>
+                  <p className="text-sm font-semibold">{user.email}</p>
+                  <Button variant="destructive" size="sm" onClick={handleSignOut}>
+                    Sign out
                   </Button>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <Link to="/login">
-                <Button size="sm" className="gap-1">
-                  <User className="h-4 w-4" />
-                  Sign In
-                </Button>
-              </Link>
-            )}
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/login">Log In</a>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <a href="/register">Sign Up</a>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <NavItems pathname={pathname} />
+
+        {loading ? (
+          <Skeleton className="h-10 w-[200px]" />
+        ) : user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.avatar_url || ""} alt={user.email || "User"} />
+                  <AvatarFallback>{getInitials(user.email || "User")}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={isLoadingBalance}>
+                <Coin className="mr-2 h-4 w-4" />
+                Wallet: {isLoadingBalance ? <Skeleton className="inline-block h-4 w-16" /> : walletBalance?.toFixed(2)}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href="/dashboard">Dashboard</a>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" asChild>
+              <a href="/login">Log In</a>
+            </Button>
+            <Button size="sm" asChild>
+              <a href="/register">Sign Up</a>
+            </Button>
           </div>
         )}
+
+        <ModeToggle />
       </div>
-      
-      {/* Mobile Menu */}
-      {isMobile && isMenuOpen && (
-        <div className="container pb-4 animate-fade-in">
-          <nav className="flex flex-col gap-2">
-            <Link to="/markets" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
-              Markets
-            </Link>
-            <Link to="/how-it-works" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
-              How It Works
-            </Link>
-            {user ? (
-              <>
-                <Link to="/dashboard" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
-                  Dashboard
-                </Link>
-                <button className="p-2 text-left hover:bg-muted rounded-md" onClick={() => { handleSignOut(); toggleMenu(); }}>
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="p-2 hover:bg-muted rounded-md" onClick={toggleMenu}>
-                Sign In
-              </Link>
-            )}
-          </nav>
-        </div>
-      )}
-    </header>
+    </div>
   );
 };
 

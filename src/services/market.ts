@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "@/hooks/use-toast";
@@ -19,7 +18,6 @@ export async function getMarkets() {
       throw error;
     }
 
-    // For each market, fetch its price history
     const marketsWithPriceHistory = await Promise.all(
       data.map(async (market) => {
         const { data: priceHistoryData, error: priceHistoryError } = await supabase
@@ -42,7 +40,6 @@ export async function getMarkets() {
           noPrice: item.no_price,
         }));
 
-        // Calculate total bets
         const { count, error: countError } = await supabase
           .from("transactions")
           .select("*", { count: "exact", head: true })
@@ -91,7 +88,6 @@ export async function getMarketById(id: string): Promise<Market | null> {
       throw error;
     }
 
-    // Fetch price history for this market
     const { data: priceHistoryData, error: priceHistoryError } = await supabase
       .from("price_history")
       .select("*")
@@ -109,7 +105,6 @@ export async function getMarketById(id: string): Promise<Market | null> {
       noPrice: item.no_price,
     }));
 
-    // Calculate total bets
     const { count, error: countError } = await supabase
       .from("transactions")
       .select("*", { count: "exact", head: true })
@@ -149,7 +144,6 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       return null;
     }
     
-    // Create a market with today as start date and the specified close date
     const { data, error } = await supabase
       .from("markets")
       .insert([
@@ -178,7 +172,6 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       throw error;
     }
 
-    // Also create initial price history entry
     const { error: priceHistoryError } = await supabase
       .from("price_history")
       .insert([
@@ -206,10 +199,8 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
   }
 }
 
-// Seed 5 active markets for testing
 export async function seedMarkets() {
   try {
-    // Check if we already have markets
     const { count, error: countError } = await supabase
       .from("markets")
       .select("*", { count: "exact", head: true });
@@ -219,7 +210,6 @@ export async function seedMarkets() {
       return;
     }
     
-    // Only seed if we have less than 5 markets
     if (count && count >= 5) {
       console.log("Already have enough markets, skipping seed");
       return;
@@ -236,7 +226,7 @@ export async function seedMarkets() {
         no_price: 0.35,
         volume: 25000,
         liquidity: 10000,
-        close_date: new Date(today.getFullYear(), 11, 31).toISOString(), // December 31 of current year
+        close_date: new Date(today.getFullYear(), 11, 31).toISOString(),
         status: "open"
       },
       {
@@ -247,7 +237,7 @@ export async function seedMarkets() {
         no_price: 0.52,
         volume: 15000,
         liquidity: 7500,
-        close_date: new Date(today.getFullYear(), today.getMonth() + 3, 1).toISOString(), // 3 months from now
+        close_date: new Date(today.getFullYear(), today.getMonth() + 3, 1).toISOString(),
         status: "open"
       },
       {
@@ -258,7 +248,7 @@ export async function seedMarkets() {
         no_price: 0.28,
         volume: 30000,
         liquidity: 15000,
-        close_date: new Date(today.getFullYear(), today.getMonth() + 1, 15).toISOString(), // ~1 month from now
+        close_date: new Date(today.getFullYear(), today.getMonth() + 1, 15).toISOString(),
         status: "open"
       },
       {
@@ -269,7 +259,7 @@ export async function seedMarkets() {
         no_price: 0.70,
         volume: 20000,
         liquidity: 8000,
-        close_date: new Date(today.getFullYear(), 8, 1).toISOString(), // September 1
+        close_date: new Date(today.getFullYear(), 8, 1).toISOString(),
         status: "open"
       },
       {
@@ -280,12 +270,11 @@ export async function seedMarkets() {
         no_price: 0.45,
         volume: 50000,
         liquidity: 25000,
-        close_date: new Date(2024, 10, 15).toISOString(), // November 15, 2024
+        close_date: new Date(2024, 10, 15).toISOString(),
         status: "open"
       }
     ];
     
-    // Insert each market and create initial price history
     for (const market of markets) {
       const { data, error } = await supabase
         .from("markets")
@@ -298,7 +287,6 @@ export async function seedMarkets() {
         continue;
       }
       
-      // Create initial price history entry
       await supabase
         .from("price_history")
         .insert([
@@ -320,5 +308,122 @@ export async function seedMarkets() {
     
   } catch (error) {
     console.error("Error in seedMarkets:", error);
+  }
+}
+
+export async function resolveMarket(marketId: string, resolution: "yes" | "no") {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to resolve markets.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    const { data: market, error: marketError } = await supabase
+      .from("markets")
+      .select("*")
+      .eq("id", marketId)
+      .single();
+      
+    if (marketError) {
+      toast({
+        title: "Error fetching market",
+        description: marketError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    const status = resolution === "yes" ? "resolved_yes" as MarketStatus : "resolved_no" as MarketStatus;
+    
+    const { error: updateError } = await supabase
+      .from("markets")
+      .update({ status })
+      .eq("id", marketId);
+      
+    if (updateError) {
+      toast({
+        title: "Error resolving market",
+        description: updateError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    const { data: positions, error: positionsError } = await supabase
+      .from("positions")
+      .select("*")
+      .eq("market_id", marketId);
+      
+    if (positionsError) {
+      toast({
+        title: "Error fetching positions",
+        description: positionsError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    for (const position of positions) {
+      const isWinning = (position.position === "yes" && resolution === "yes") || 
+                        (position.position === "no" && resolution === "no");
+      
+      if (isWinning) {
+        const winnings = position.shares;
+        
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("wallet_balance")
+          .eq("id", position.user_id)
+          .single();
+          
+        if (!profileError && profile) {
+          const newBalance = profile.wallet_balance + winnings;
+          
+          await supabase
+            .from("profiles")
+            .update({ wallet_balance: newBalance })
+            .eq("id", position.user_id);
+            
+          await supabase
+            .from("transactions")
+            .insert([
+              {
+                user_id: position.user_id,
+                market_id: marketId,
+                type: "resolve",
+                position: position.position,
+                shares: position.shares,
+                amount: winnings,
+                balance: newBalance
+              }
+            ]);
+        }
+      }
+      
+      await supabase
+        .from("positions")
+        .delete()
+        .eq("id", position.id);
+    }
+    
+    toast({
+      title: "Market resolved",
+      description: `The market has been resolved as ${resolution.toUpperCase()}.`,
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error resolving market:", error);
+    toast({
+      title: "Error resolving market",
+      description: "An unexpected error occurred while resolving the market.",
+      variant: "destructive",
+    });
+    return null;
   }
 }

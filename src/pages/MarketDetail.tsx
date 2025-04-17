@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Market } from "@/types/market";
 import { Users, DollarSign, ArrowLeftRight, Clock, AlertCircle, ArrowLeft } from "lucide-react";
-import { getMarketById } from "@/services/market";
+import { getMarketById, resolveMarket } from "@/services/market";
 import { executeTrade, getUserWalletBalance } from "@/services/trading";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -166,6 +165,22 @@ const MarketDetail = () => {
       console.error("Error executing trade:", error);
       toast.dismiss();
       toast.error("Failed to execute trade");
+    }
+  };
+  
+  // Add the following import and code to the MarketDetail component:
+  
+  // In MarketDetail component, add a new function for resolving markets:
+  const handleResolveMarket = async (resolution: "yes" | "no") => {
+    if (!market) return;
+    
+    if (window.confirm(`Are you sure you want to resolve this market as ${resolution.toUpperCase()}?`)) {
+      const result = await resolveMarket(market.id, resolution);
+      if (result?.success) {
+        // Refresh market data
+        const updatedMarket = await getMarketById(market.id);
+        setMarket(updatedMarket);
+      }
     }
   };
   
@@ -419,6 +434,47 @@ const MarketDetail = () => {
             </div>
           </div>
         </div>
+        
+        {/* Add the following JSX before the closing </div> in the market detail section: */}
+        
+        {/* Add a market resolution section if market is still open */}
+        {market?.status === "open" && (
+          <div className="mt-6 p-4 border border-accent/30 rounded-lg bg-accent/10">
+            <h3 className="font-semibold mb-2">Admin: Resolve Market</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              As an admin, you can resolve this market as YES or NO.
+            </p>
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="border-green-500 text-green-500 hover:bg-green-500/10"
+                onClick={() => handleResolveMarket("yes")}
+              >
+                Resolve as YES
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-red-500 text-red-500 hover:bg-red-500/10"
+                onClick={() => handleResolveMarket("no")}
+              >
+                Resolve as NO
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* And add this section to show the result if market is already resolved: */}
+        {(market?.status === "resolved_yes" || market?.status === "resolved_no") && (
+          <div className="mt-6 p-4 border border-accent/30 rounded-lg bg-accent/10">
+            <h3 className="font-semibold mb-2">Market Resolved</h3>
+            <p className="text-lg font-medium">
+              This market has been resolved as{" "}
+              <span className={market?.status === "resolved_yes" ? "text-green-500" : "text-red-500"}>
+                {market?.status === "resolved_yes" ? "YES" : "NO"}
+              </span>
+            </p>
+          </div>
+        )}
       </div>
     </Layout>
   );
