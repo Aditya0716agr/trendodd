@@ -5,21 +5,52 @@ import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, parseISO } from "date-fns";
-import { Search, Clock, ArrowUpDown } from "lucide-react";
-import { mockMarkets, marketCategories } from "@/data/mockMarkets";
+import { Clock, ArrowUpDown, Search } from "lucide-react";
 import { Market, MarketCategory } from "@/types/market";
+import { getMarkets } from "@/services/market";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+const marketCategories = [
+  { id: "crypto", name: "Crypto" },
+  { id: "stocks", name: "Stocks" },
+  { id: "politics", name: "Politics" },
+  { id: "economy", name: "Economy" },
+  { id: "technology", name: "Technology" },
+  { id: "sports", name: "Sports" },
+  { id: "entertainment", name: "Entertainment" },
+];
 
 const Markets = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<MarketCategory | "all">("all");
   const [sortField, setSortField] = useState<"volume" | "closeDate">("volume");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [filteredMarkets, setFilteredMarkets] = useState<Market[]>(mockMarkets);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [filteredMarkets, setFilteredMarkets] = useState<Market[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useIsMobile();
+
+  // Fetch markets on component mount
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      setIsLoading(true);
+      try {
+        const marketData = await getMarkets();
+        setMarkets(marketData);
+      } catch (error) {
+        console.error("Error fetching markets:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMarkets();
+  }, []);
 
   // Apply filters when any filter parameter changes
   useEffect(() => {
-    let results = [...mockMarkets];
+    let results = [...markets];
     
     // Filter by search query
     if (searchQuery) {
@@ -48,7 +79,7 @@ const Markets = () => {
     });
     
     setFilteredMarkets(results);
-  }, [searchQuery, activeCategory, sortField, sortDirection]);
+  }, [searchQuery, activeCategory, sortField, sortDirection, markets]);
 
   // Toggle sort direction
   const toggleSort = (field: "volume" | "closeDate") => {
@@ -69,6 +100,70 @@ const Markets = () => {
     
     return diffDays > 1 ? `${diffDays} days` : diffDays === 1 ? "1 day" : "< 1 day";
   };
+
+  // Market card component for reuse
+  const MarketCard = ({ market }: { market: Market }) => (
+    <Link to={`/market/${market.id}`} key={market.id} className="block">
+      <div className="market-card flex flex-col md:flex-row md:items-center">
+        <div className="flex-grow mb-4 md:mb-0 md:mr-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
+              {market.category}
+            </span>
+            <div className="flex items-center text-xs text-muted-foreground gap-1">
+              <Clock className="h-3 w-3" />
+              <span>{formatTimeRemaining(market.closeDate)}</span>
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold">{market.question}</h3>
+        </div>
+        
+        <div className="flex items-center gap-6 md:gap-8">
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Current Prices</div>
+            <div className="flex gap-3">
+              <div>
+                <span className="price-yes">Yes: {Math.round(market.yesPrice * 100)}¢</span>
+              </div>
+              <div>
+                <span className="price-no">No: {Math.round(market.noPrice * 100)}¢</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground mb-1">Volume</div>
+            <div className="font-medium">{(market.volume / 1000).toFixed(0)}K</div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+
+  // Loading skeleton
+  const MarketSkeleton = () => (
+    <div className="market-card">
+      <div className="flex flex-col md:flex-row md:items-center">
+        <div className="flex-grow mb-4 md:mb-0 md:mr-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <Skeleton className="h-6 w-full max-w-md" />
+        </div>
+        <div className="flex items-center gap-8">
+          <div>
+            <Skeleton className="h-4 w-24 mb-2" />
+            <Skeleton className="h-5 w-32" />
+          </div>
+          <div>
+            <Skeleton className="h-4 w-16 mb-2" />
+            <Skeleton className="h-5 w-12" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Layout>
@@ -122,104 +217,24 @@ const Markets = () => {
             </Button>
           </div>
 
-          <TabsContent value="all" className="mt-0">
-            <div className="grid grid-cols-1 gap-4">
-              {filteredMarkets.length > 0 ? (
-                filteredMarkets.map((market) => (
-                  <Link to={`/market/${market.id}`} key={market.id}>
-                    <div className="market-card flex flex-col md:flex-row md:items-center">
-                      <div className="flex-grow mb-4 md:mb-0 md:mr-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
-                            {market.category}
-                          </span>
-                          <div className="flex items-center text-xs text-muted-foreground gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatTimeRemaining(market.closeDate)}</span>
-                          </div>
-                        </div>
-                        <h3 className="text-lg font-semibold">{market.question}</h3>
-                      </div>
-                      
-                      <div className="flex items-center gap-8">
-                        <div>
-                          <div className="text-xs text-muted-foreground mb-1">Current Prices</div>
-                          <div className="flex gap-3">
-                            <div>
-                              <span className="price-yes">Yes: {Math.round(market.yesPrice * 100)}¢</span>
-                            </div>
-                            <div>
-                              <span className="price-no">No: {Math.round(market.noPrice * 100)}¢</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground mb-1">Volume</div>
-                          <div className="font-medium">{(market.volume / 1000).toFixed(0)}K</div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="text-center py-12 border rounded-lg bg-muted/50">
-                  <p className="text-muted-foreground">No markets found matching your criteria.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Create a TabsContent for each category, with the same layout as 'all' */}
-          {marketCategories.map((category) => (
-            <TabsContent key={category.id} value={category.id} className="mt-0">
-              <div className="grid grid-cols-1 gap-4">
-                {filteredMarkets.length > 0 ? (
-                  filteredMarkets.map((market) => (
-                    <Link to={`/market/${market.id}`} key={market.id}>
-                      <div className="market-card flex flex-col md:flex-row md:items-center">
-                        <div className="flex-grow mb-4 md:mb-0 md:mr-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
-                              {market.category}
-                            </span>
-                            <div className="flex items-center text-xs text-muted-foreground gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>{formatTimeRemaining(market.closeDate)}</span>
-                            </div>
-                          </div>
-                          <h3 className="text-lg font-semibold">{market.question}</h3>
-                        </div>
-                        
-                        <div className="flex items-center gap-8">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Current Prices</div>
-                            <div className="flex gap-3">
-                              <div>
-                                <span className="price-yes">Yes: {Math.round(market.yesPrice * 100)}¢</span>
-                              </div>
-                              <div>
-                                <span className="price-no">No: {Math.round(market.noPrice * 100)}¢</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-xs text-muted-foreground mb-1">Volume</div>
-                            <div className="font-medium">{(market.volume / 1000).toFixed(0)}K</div>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="text-center py-12 border rounded-lg bg-muted/50">
-                    <p className="text-muted-foreground">No markets found matching your criteria.</p>
-                  </div>
-                )}
+          <div className="grid grid-cols-1 gap-4">
+            {isLoading ? (
+              // Show skeletons while loading
+              Array.from({ length: 5 }).map((_, index) => (
+                <MarketSkeleton key={index} />
+              ))
+            ) : filteredMarkets.length > 0 ? (
+              // Show filtered markets
+              filteredMarkets.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))
+            ) : (
+              // Show no markets found message
+              <div className="text-center py-12 border rounded-lg bg-muted/50">
+                <p className="text-muted-foreground">No markets found matching your criteria.</p>
               </div>
-            </TabsContent>
-          ))}
+            )}
+          </div>
         </Tabs>
       </div>
     </Layout>

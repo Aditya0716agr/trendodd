@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { Users, DollarSign, ArrowLeftRight, Clock, AlertCircle, ArrowLeft } from
 import { getMarketById } from "@/services/market";
 import { executeTrade, getUserWalletBalance } from "@/services/trading";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MarketDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +27,9 @@ const MarketDetail = () => {
   const [shares, setShares] = useState("1");
   const [cost, setCost] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
   
   // Fetch market data
   useEffect(() => {
@@ -34,25 +38,26 @@ const MarketDetail = () => {
       
       try {
         setIsLoading(true);
+        setError(null);
         const marketData = await getMarketById(id);
         
         if (marketData) {
           setMarket(marketData);
         } else {
+          setError("Market not found");
           toast.error("Market not found");
-          navigate("/markets");
         }
       } catch (error) {
         console.error("Error fetching market:", error);
+        setError("Failed to load market data");
         toast.error("Failed to load market data");
-        navigate("/markets");
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchMarket();
-  }, [id, navigate]);
+  }, [id]);
   
   // Fetch wallet balance if user is logged in
   useEffect(() => {
@@ -130,6 +135,8 @@ const MarketDetail = () => {
     }
     
     try {
+      toast.loading("Processing your trade...");
+      
       const result = await executeTrade({
         marketId: id,
         position,
@@ -139,6 +146,9 @@ const MarketDetail = () => {
       });
       
       if (result) {
+        toast.dismiss();
+        toast.success("Trade executed successfully");
+        
         // Update wallet balance after successful trade
         const newBalance = await getUserWalletBalance();
         setWalletBalance(newBalance);
@@ -148,9 +158,13 @@ const MarketDetail = () => {
         if (updatedMarket) {
           setMarket(updatedMarket);
         }
+        
+        // Reset shares to 1
+        setShares("1");
       }
     } catch (error) {
       console.error("Error executing trade:", error);
+      toast.dismiss();
       toast.error("Failed to execute trade");
     }
   };
@@ -159,17 +173,36 @@ const MarketDetail = () => {
     return (
       <Layout>
         <div className="container py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-            <div className="h-64 bg-muted rounded"></div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mb-6" 
+            onClick={() => navigate("/markets")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Markets
+          </Button>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-6 w-1/4 mb-4" />
+              <Skeleton className="h-4 w-full mb-8" />
+              <Skeleton className="h-64 w-full mb-8" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+            <Skeleton className="h-[400px] w-full" />
           </div>
         </div>
       </Layout>
     );
   }
   
-  if (!market) {
+  if (error || !market) {
     return (
       <Layout>
         <div className="container py-8 text-center">
@@ -225,6 +258,7 @@ const MarketDetail = () => {
                         formatter={(value) => [`${value}¢`, '']}
                         labelFormatter={(label) => `Date: ${label}`} 
                       />
+                      <Legend />
                       <Line 
                         type="monotone" 
                         dataKey="yes" 
@@ -315,6 +349,7 @@ const MarketDetail = () => {
                       id="position" 
                       className="flex gap-4 mt-2" 
                       defaultValue="yes"
+                      value={position}
                       onValueChange={(value) => setPosition(value as "yes" | "no")}
                     >
                       <div className="flex items-center space-x-2">

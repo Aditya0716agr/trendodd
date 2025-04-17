@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { seedMarkets } from "@/services/market";
 import Index from "./pages/Index";
 import Markets from "./pages/Markets";
@@ -16,17 +16,39 @@ import Dashboard from "./pages/Dashboard";
 import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Initialize app with seed markets
 const AppRoutes = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Run initialization once
   useEffect(() => {
-    // Seed markets on first load
-    seedMarkets().catch(console.error);
-  }, []);
+    const initializeApp = async () => {
+      if (isInitialized) return;
+      
+      try {
+        // Seed markets on first load
+        await seedMarkets();
+        console.log("Markets seeding completed");
+      } catch (error) {
+        console.error("Error during app initialization:", error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+    
+    initializeApp();
+  }, [isInitialized]);
 
   return (
     <Routes>

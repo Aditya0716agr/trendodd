@@ -178,6 +178,22 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       throw error;
     }
 
+    // Also create initial price history entry
+    const { error: priceHistoryError } = await supabase
+      .from("price_history")
+      .insert([
+        {
+          market_id: data.id,
+          yes_price: market.yesPrice,
+          no_price: market.noPrice,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+    if (priceHistoryError) {
+      console.error("Error creating initial price history:", priceHistoryError);
+    }
+
     toast({
       title: "Market created",
       description: "Your market has been created successfully.",
@@ -281,6 +297,18 @@ export async function seedMarkets() {
         console.error("Error creating seed market:", error);
         continue;
       }
+      
+      // Create initial price history entry
+      await supabase
+        .from("price_history")
+        .insert([
+          {
+            market_id: data.id,
+            yes_price: market.yes_price,
+            no_price: market.no_price,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       
       console.log("Created seed market:", data.id);
     }
