@@ -30,20 +30,6 @@ const NavItems = ({ pathname }: { pathname: string }) => (
         How it works
       </a>
     </Button>
-    {/* Update the import and NavItems section in the Navbar component
-to include a link to the Request Market page.
-
-In the NavItems array, add:
-{
-  name: "Request Market",
-  href: "/request-market",
-  current: pathname === "/request-market",
-}, */}
-{
-  name: "Request Market",
-  href: "/request-market",
-  current: pathname === "/request-market",
-},
     <Button variant="ghost" size="sm" asChild>
       <a href="/request-market" className={pathname === "/request-market" ? "font-bold" : ""}>
         Request Market
