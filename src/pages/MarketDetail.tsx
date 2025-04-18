@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,10 @@ const MarketDetail = () => {
   const [cost, setCost] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [graphUpdateInterval, setGraphUpdateInterval] = useState<NodeJS.Timeout | null>(null);
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
   
-  // Fetch market data
   useEffect(() => {
     const fetchMarket = async () => {
       if (!id) return;
@@ -59,11 +59,34 @@ const MarketDetail = () => {
     fetchMarket();
   }, [id]);
   
-  // Set up real-time subscription to price changes
+  useEffect(() => {
+    const updateGraphPeriodically = async () => {
+      if (!id) return;
+
+      try {
+        const updatedMarket = await getMarketById(id);
+        
+        if (updatedMarket) {
+          setMarket(updatedMarket);
+        }
+      } catch (error) {
+        console.error("Error updating market data:", error);
+      }
+    };
+
+    const interval = setInterval(updateGraphPeriodically, 300000);
+    setGraphUpdateInterval(interval);
+
+    return () => {
+      if (graphUpdateInterval) {
+        clearInterval(graphUpdateInterval);
+      }
+    };
+  }, [id]);
+  
   useEffect(() => {
     if (!id) return;
     
-    // Subscribe to market updates
     const channel = supabase
       .channel('market-updates')
       .on(
@@ -76,7 +99,6 @@ const MarketDetail = () => {
         },
         async (payload) => {
           console.log("Market update received:", payload);
-          // Refresh market data when updates occur
           const updatedMarket = await getMarketById(id);
           if (updatedMarket) {
             setMarket(updatedMarket);
@@ -93,7 +115,6 @@ const MarketDetail = () => {
         },
         async (payload) => {
           console.log("Price history update received:", payload);
-          // Refresh market data when price history is updated
           const updatedMarket = await getMarketById(id);
           if (updatedMarket) {
             setMarket(updatedMarket);
@@ -102,13 +123,11 @@ const MarketDetail = () => {
       )
       .subscribe();
       
-    // Clean up subscription on unmount
     return () => {
       supabase.removeChannel(channel);
     };
   }, [id]);
   
-  // Fetch wallet balance if user is logged in
   useEffect(() => {
     const fetchBalance = async () => {
       if (user) {
@@ -124,7 +143,6 @@ const MarketDetail = () => {
     fetchBalance();
   }, [user]);
   
-  // Calculate cost when shares or position changes
   useEffect(() => {
     if (market && shares) {
       const price = position === "yes" ? market.yesPrice : market.noPrice;
@@ -138,7 +156,6 @@ const MarketDetail = () => {
     }
   }, [market, position, shares]);
   
-  // Format date for display
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), "MMM d, yyyy");
@@ -147,7 +164,6 @@ const MarketDetail = () => {
     }
   };
   
-  // Format chart data
   const formatChartData = () => {
     if (!market || !market.priceHistory || market.priceHistory.length === 0) return [];
     
@@ -158,7 +174,6 @@ const MarketDetail = () => {
     }));
   };
   
-  // Handle buy action
   const handleBuy = async () => {
     if (!user) {
       toast.error("Please log in to trade");
@@ -198,11 +213,9 @@ const MarketDetail = () => {
         toast.dismiss();
         toast.success("Trade executed successfully");
         
-        // Update wallet balance after successful trade
         const newBalance = await getUserWalletBalance();
         setWalletBalance(newBalance);
         
-        // Reset shares to 1
         setShares("1");
       }
     } catch (error) {
@@ -218,7 +231,6 @@ const MarketDetail = () => {
     if (window.confirm(`Are you sure you want to resolve this market as ${resolution.toUpperCase()}?`)) {
       const result = await resolveMarket(market.id, resolution);
       if (result?.success) {
-        // Refresh market data
         const updatedMarket = await getMarketById(market.id);
         setMarket(updatedMarket);
       }
@@ -285,7 +297,6 @@ const MarketDetail = () => {
         </Button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Market Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
@@ -300,7 +311,6 @@ const MarketDetail = () => {
             <h1 className="text-2xl md:text-3xl font-bold mb-4">{market.question}</h1>
             <p className="text-muted-foreground mb-8">{market.description}</p>
             
-            {/* Price Chart */}
             <div className="bg-card rounded-lg border p-4 mb-8">
               <h2 className="text-lg font-semibold mb-4">Price History</h2>
               <div className="h-64">
@@ -343,7 +353,6 @@ const MarketDetail = () => {
               </div>
             </div>
             
-            {/* Market Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-card rounded-lg border p-4 text-center">
                 <div className="flex items-center justify-center mb-2">
@@ -371,7 +380,6 @@ const MarketDetail = () => {
             </div>
           </div>
           
-          {/* Right Column - Trading Interface */}
           <div>
             <div className="bg-card rounded-lg border p-6 sticky top-20">
               <h2 className="text-xl font-semibold mb-4">Trade</h2>
@@ -476,7 +484,6 @@ const MarketDetail = () => {
           </div>
         </div>
         
-        {/* Market resolution section if market is still open */}
         {market?.status === "open" && (
           <div className="mt-6 p-4 border border-accent/30 rounded-lg bg-accent/10">
             <h3 className="font-semibold mb-2">Admin: Resolve Market</h3>
@@ -502,7 +509,6 @@ const MarketDetail = () => {
           </div>
         )}
         
-        {/* And add this section to show the result if market is already resolved: */}
         {(market?.status === "resolved_yes" || market?.status === "resolved_no") && (
           <div className="mt-6 p-4 border border-accent/30 rounded-lg bg-accent/10">
             <h3 className="font-semibold mb-2">Market Resolved</h3>

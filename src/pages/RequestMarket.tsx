@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, addDays, isBefore } from "date-fns";
+import { addDays, format } from "date-fns";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { CalendarIcon, ArrowLeft, ThumbsUp } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { submitMarketRequest, getUserMarketRequests } from "@/services/market";
+import { submitMarketRequest, getUserMarketRequests, getPendingMarketRequests, upvoteMarketRequest } from "@/services/market";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -34,13 +34,14 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const RequestMarket = () => {
-  const { user, loading: authLoading } = useAuth(); // Changed from isLoading to loading
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRequests, setUserRequests] = useState<any[]>([]);
   const [showRequests, setShowRequests] = useState(false);
-  
-  // Initialize form
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [isLoadingPendingRequests, setIsLoadingPendingRequests] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,8 +51,7 @@ const RequestMarket = () => {
       closeDate: addDays(new Date(), 30),
     },
   });
-  
-  // Load user's market requests
+
   const loadUserRequests = async () => {
     if (!user) return;
     
@@ -59,8 +59,34 @@ const RequestMarket = () => {
     setUserRequests(requests);
     setShowRequests(true);
   };
-  
-  // Handle form submission
+
+  const loadPendingRequests = async () => {
+    setIsLoadingPendingRequests(true);
+    try {
+      const requests = await getPendingMarketRequests();
+      setPendingRequests(requests);
+    } catch (error) {
+      console.error("Error loading pending requests:", error);
+      toast.error("Failed to load pending market requests");
+    } finally {
+      setIsLoadingPendingRequests(false);
+    }
+  };
+
+  const handleUpvote = async (requestId: string) => {
+    if (!user) {
+      toast.error("Please sign in to upvote");
+      navigate("/login");
+      return;
+    }
+
+    const result = await upvoteMarketRequest(requestId);
+    
+    if (result !== null) {
+      loadPendingRequests();
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     if (!user) {
       toast.error("Please sign in to submit a market request");
@@ -81,7 +107,6 @@ const RequestMarket = () => {
       if (result) {
         toast.success("Market request submitted successfully");
         form.reset();
-        // Load updated requests
         loadUserRequests();
       }
     } catch (error) {
@@ -91,8 +116,7 @@ const RequestMarket = () => {
       setIsSubmitting(false);
     }
   };
-  
-  // Get status badge color
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -105,8 +129,7 @@ const RequestMarket = () => {
         return "bg-gray-500";
     }
   };
-  
-  // Modify rendering logic to handle different loading states
+
   if (authLoading) {
     return (
       <Layout>
@@ -118,7 +141,7 @@ const RequestMarket = () => {
       </Layout>
     );
   }
-  
+
   if (!user) {
     return (
       <Layout>
@@ -134,7 +157,7 @@ const RequestMarket = () => {
       </Layout>
     );
   }
-  
+
   return (
     <Layout>
       <div className="container py-8">
@@ -170,7 +193,6 @@ const RequestMarket = () => {
             </Button>
           </div>
           
-          {/* User's past requests */}
           {showRequests && (
             <div className="mb-8">
               <h3 className="text-lg font-medium mb-4">Your Recent Requests</h3>
@@ -224,7 +246,72 @@ const RequestMarket = () => {
             </div>
           )}
           
-          {/* Market request form */}
+          <div className="mt-8 p-4 border rounded-md bg-muted/50">
+            <h3 className="font-medium mb-2">How Market Requests Work</h3>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
+              <li>Submit your request for a prediction market with a clear yes/no question.</li>
+              <li>Our team reviews your request for clarity, feasibility, and interest.</li>
+              <li>If approved, your market goes live and you'll be notified.</li>
+              <li>Markets must have clear resolution criteria by the close date.</li>
+            </ol>
+          </div>
+          
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Pending Market Requests</h2>
+              <Button 
+                variant="outline" 
+                onClick={loadPendingRequests}
+                disabled={isLoadingPendingRequests}
+              >
+                {isLoadingPendingRequests ? "Loading..." : "Refresh Requests"}
+              </Button>
+            </div>
+            
+            {pendingRequests.length === 0 ? (
+              <p className="text-muted-foreground text-center">
+                No pending market requests found.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {pendingRequests.map((request) => (
+                  <Card key={request.id} className="hover:bg-accent/50 transition-colors">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-base">{request.question}</CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleUpvote(request.id)}
+                            disabled={!user}
+                            className={cn(
+                              "flex items-center space-x-1",
+                              request.has_user_upvoted ? "text-primary" : "text-muted-foreground"
+                            )}
+                          >
+                            <ThumbsUp className="h-4 w-4" />
+                            <span>{request.upvotes_count}</span>
+                          </Button>
+                        </div>
+                      </div>
+                      <CardDescription>
+                        By {request.profiles?.username || 'Anonymous'} | {format(new Date(request.created_at), "MMM d, yyyy")}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm">
+                      <p className="line-clamp-2">{request.description}</p>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex justify-between items-center text-sm">
+                      <span className="capitalize">Category: {request.category}</span>
+                      <span>Closes: {format(new Date(request.close_date), "MMM d, yyyy")}</span>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -341,16 +428,6 @@ const RequestMarket = () => {
               </div>
             </form>
           </Form>
-          
-          <div className="mt-8 p-4 border rounded-md bg-muted/50">
-            <h3 className="font-medium mb-2">How Market Requests Work</h3>
-            <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-              <li>Submit your request for a prediction market with a clear yes/no question.</li>
-              <li>Our team reviews your request for clarity, feasibility, and interest.</li>
-              <li>If approved, your market goes live and you'll be notified.</li>
-              <li>Markets must have clear resolution criteria by the close date.</li>
-            </ol>
-          </div>
         </div>
       </div>
     </Layout>

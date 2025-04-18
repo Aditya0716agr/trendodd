@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
-import { toast } from "@/hooks/use-toast";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { toast } from "sonner";
+import { addDays } from "date-fns";
 
 const enableRealtimeForMarkets = async () => {
   try {
@@ -504,6 +504,53 @@ export async function submitMarketRequest(
   }
 }
 
+export async function upvoteMarketRequest(requestId: string) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      toast.error("Please sign in to upvote");
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from("market_request_upvotes")
+      .insert({ 
+        request_id: requestId, 
+        user_id: user.user.id 
+      });
+    
+    if (error) {
+      if (error.code === '23505') {
+        // Unique constraint violation means user already upvoted
+        // So we'll remove the upvote instead
+        const { error: deleteError } = await supabase
+          .from("market_request_upvotes")
+          .delete()
+          .eq("request_id", requestId)
+          .eq("user_id", user.user.id);
+        
+        if (deleteError) {
+          toast.error("Error removing upvote");
+          return null;
+        }
+        
+        toast.info("Upvote removed");
+        return false;
+      }
+      
+      toast.error("Error upvoting request");
+      return null;
+    }
+    
+    toast.success("Request upvoted");
+    return true;
+  } catch (error) {
+    console.error("Error upvoting market request:", error);
+    toast.error("An unexpected error occurred");
+    return null;
+  }
+}
+
 export async function getUserMarketRequests() {
   try {
     const { data: user } = await supabase.auth.getUser();
@@ -512,7 +559,7 @@ export async function getUserMarketRequests() {
     }
     
     const { data, error } = await supabase
-      .from("market_requests")
+      .from("market_requests_with_votes")
       .select("*")
       .eq("requested_by", user.user.id)
       .order("created_at", { ascending: false });
@@ -532,7 +579,7 @@ export async function getUserMarketRequests() {
 export async function getPendingMarketRequests() {
   try {
     const { data, error } = await supabase
-      .from("market_requests")
+      .from("market_requests_with_votes")
       .select(`
         *,
         profiles:requested_by (

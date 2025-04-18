@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      market_request_upvotes: {
+        Row: {
+          created_at: string | null
+          id: string
+          request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_request_upvotes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "market_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_request_upvotes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "market_requests_with_votes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_requests: {
         Row: {
           category: string
@@ -253,7 +289,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      market_requests_with_votes: {
+        Row: {
+          category: string | null
+          close_date: string | null
+          created_at: string | null
+          description: string | null
+          has_user_upvoted: boolean | null
+          id: string | null
+          market_id: string | null
+          question: string | null
+          rejection_reason: string | null
+          requested_by: string | null
+          status: string | null
+          upvotes_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_requests_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
