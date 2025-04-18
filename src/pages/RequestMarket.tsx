@@ -1,325 +1,355 @@
 
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format, addDays, isBefore } from "date-fns";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MarketCategory } from "@/types/market";
-import { Lightbulb, CheckCircle2, Calendar, ArrowUp } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
+import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { submitMarketRequest, getUserMarketRequests } from "@/services/market";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const marketCategories = [
-  { id: "crypto", name: "Crypto" },
-  { id: "stocks", name: "Stocks" },
-  { id: "politics", name: "Politics" },
-  { id: "economy", name: "Economy" },
-  { id: "technology", name: "Technology" },
-  { id: "sports", name: "Sports" },
-  { id: "entertainment", name: "Entertainment" },
-];
+import { cn } from "@/lib/utils";
+import { MarketCategory } from "@/types/market";
 
 const formSchema = z.object({
-  title: z.string().min(10, "Title must be at least 10 characters long"),
-  description: z.string().min(30, "Description must be at least 30 characters long"),
-  category: z.string().optional(),
-  closeDate: z.date().min(new Date(), "Close date must be in the future").optional(),
-  email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
+  question: z.string().min(10, "Question must be at least 10 characters").max(200, "Question must be less than 200 characters"),
+  description: z.string().min(20, "Description must be at least 20 characters").max(1000, "Description must be less than 1000 characters"),
+  category: z.enum(["politics", "crypto", "stocks", "sports", "entertainment", "technology", "economy"]),
+  closeDate: z.date().refine(
+    (date) => isBefore(new Date(), date), 
+    { message: "Close date must be in the future" }
+  ),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 const RequestMarket = () => {
-  const { user } = useAuth();
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [popularRequests, setPopularRequests] = useState<Array<{id: string, question: string, votes: number}>>([
-    { id: '1', question: 'Will AI surpass human intelligence by 2030?', votes: 42 },
-    { id: '2', question: 'Will Tesla reach a market cap of 2 trillion by 2025?', votes: 38 },
-    { id: '3', question: 'Will remote work remain the dominant model for tech companies in 2026?', votes: 27 }
-  ]);
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userRequests, setUserRequests] = useState<any[]>([]);
+  const [showRequests, setShowRequests] = useState(false);
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Initialize form
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
+      question: "",
       description: "",
-      category: undefined,
-      email: user?.email || "",
+      category: "crypto",
+      closeDate: addDays(new Date(), 30),
     },
   });
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  
+  // Load user's market requests
+  const loadUserRequests = async () => {
+    if (!user) return;
+    
+    const requests = await getUserMarketRequests();
+    setUserRequests(requests);
+    setShowRequests(true);
+  };
+  
+  // Handle form submission
+  const onSubmit = async (values: FormValues) => {
+    if (!user) {
+      toast.error("Please sign in to submit a market request");
+      navigate("/login");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      // Since we can't use market_requests directly (it doesn't exist in the database yet),
-      // we'll use a table we know exists (markets) but just for storage purposes
-      // and add a special status to identify it as a request
-      const { error } = await supabase
-        .from("markets")
-        .insert([
-          {
-            question: values.title, // Use question field for the market title
-            description: values.description,
-            category: values.category || "other",
-            created_by: user?.id,
-            status: "request", // Mark this as a request, not a real market
-            yes_price: 0.5,
-            no_price: 0.5,
-            volume: 0,
-            liquidity: 0,
-            close_date: values.closeDate ? values.closeDate.toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now or user specified
-          },
-        ]);
-
-      if (error) {
-        toast({
-          title: "Error submitting request",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Market request submitted!",
-        description: "Thank you for your suggestion. Our team will review it soon.",
-      });
+      const result = await submitMarketRequest(
+        values.question,
+        values.description,
+        values.category as MarketCategory,
+        values.closeDate.toISOString()
+      );
       
-      setIsSubmitted(true);
+      if (result) {
+        toast.success("Market request submitted successfully");
+        form.reset();
+        // Load updated requests
+        loadUserRequests();
+      }
     } catch (error) {
       console.error("Error submitting market request:", error);
-      toast({
-        title: "Unexpected error",
-        description: "Failed to submit market request. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to submit market request. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  const upvoteRequest = (id: string) => {
-    setPopularRequests(prev => 
-      prev.map(req => 
-        req.id === id ? {...req, votes: req.votes + 1} : req
-      ).sort((a, b) => b.votes - a.votes)
-    );
-    
-    toast({
-      title: "Vote recorded",
-      description: "Thanks for your input!",
-    });
+  // Get status badge color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-500";
+      case "approved":
+        return "bg-green-500";
+      case "rejected":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
   };
-
+  
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <div className="flex justify-center items-center h-64">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-3xl font-bold mb-4">Request a Prediction Market</h1>
+            <p className="mb-6 text-muted-foreground">
+              You need to be signed in to request a new prediction market.
+            </p>
+            <Button onClick={() => navigate("/login")}>Sign In</Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
   return (
     <Layout>
-      <div className="container py-12 max-w-5xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-3">Request a Market</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Have an interesting prediction in mind? Suggest a new market for the TrendOdds community.
-            Our most requested markets will be created first!
+      <div className="container py-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-6" 
+          onClick={() => navigate("/markets")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Markets
+        </Button>
+        
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Request a Prediction Market</h1>
+          <p className="mb-8 text-muted-foreground">
+            Don't see a market you're interested in? Submit a request for a new prediction market here.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            {isSubmitted ? (
-              <Card className="animate-fade-in">
-                <CardContent className="pt-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <CheckCircle2 className="h-16 w-16 text-green-500" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Your market suggestion has been submitted and will be reviewed by our team.
-                  </p>
-                  <div className="space-x-4">
-                    <Button onClick={() => setIsSubmitted(false)}>Make Another Suggestion</Button>
-                    <Button variant="outline" asChild>
-                      <a href="/markets">Browse Markets</a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Market Suggestion Form</CardTitle>
-                  <CardDescription>
-                    Fill in the details of your suggested prediction market.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Market Question</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Will Bitcoin exceed $100,000 by the end of 2025?" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Frame your market as a yes/no question that has a definitive outcome.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Provide details about how this market would be resolved..."
-                                className="min-h-32"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Explain the conditions for resolving this market as "yes" or "no".
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Category</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a category" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {marketCategories.map((category) => (
-                                    <SelectItem key={category.id} value={category.id}>
-                                      {category.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="closeDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Suggested Close Date (Optional)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="date" 
-                                  onChange={(e) => {
-                                    const date = e.target.value ? new Date(e.target.value) : undefined;
-                                    field.onChange(date);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                When should this market resolve?
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {!user && (
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Your Email (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="your.email@example.com" type="email" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Provide your email if you want to be notified when your market is created.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      <div className="flex justify-end pt-4">
-                        <Button type="submit" className="transition-all hover:scale-105">Submit Market Request</Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            )}
+          
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Submit New Request</h2>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (showRequests) {
+                  setShowRequests(false);
+                } else {
+                  loadUserRequests();
+                }
+              }}
+            >
+              {showRequests ? "Hide My Requests" : "View My Requests"}
+            </Button>
           </div>
           
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Popular Requests</CardTitle>
-                <CardDescription>Vote for markets you want to see created</CardDescription>
-              </CardHeader>
-              <CardContent>
+          {/* User's past requests */}
+          {showRequests && (
+            <div className="mb-8">
+              <h3 className="text-lg font-medium mb-4">Your Recent Requests</h3>
+              
+              {userRequests.length === 0 ? (
+                <p className="text-muted-foreground">You haven't submitted any market requests yet.</p>
+              ) : (
                 <div className="space-y-4">
-                  {popularRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/5 transition-colors">
-                      <div>
-                        <p className="font-medium">{request.question}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline">{request.votes} votes</Badge>
+                  {userRequests.map((request) => (
+                    <Card key={request.id}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base">{request.question}</CardTitle>
+                          <Badge className={getStatusColor(request.status)}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </Badge>
                         </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => upvoteRequest(request.id)}
-                        className="hover:text-primary hover:bg-primary/10"
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <CardDescription>
+                          {format(new Date(request.created_at), "MMM d, yyyy")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-sm">
+                        <p className="line-clamp-2">{request.description}</p>
+                      </CardContent>
+                      <CardFooter className="pt-0 flex justify-between items-center text-sm">
+                        <span>Category: <span className="capitalize">{request.category}</span></span>
+                        <span>Closes: {format(new Date(request.close_date), "MMM d, yyyy")}</span>
+                      </CardFooter>
+                      {request.status === "rejected" && request.rejection_reason && (
+                        <CardFooter className="pt-0 text-sm text-red-500">
+                          Reason: {request.rejection_reason}
+                        </CardFooter>
+                      )}
+                      {request.status === "approved" && request.market_id && (
+                        <CardFooter className="pt-0">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/market/${request.market_id}`)}
+                          >
+                            View Market
+                          </Button>
+                        </CardFooter>
+                      )}
+                    </Card>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-            
-            <div className="bg-accent/20 p-6 rounded-lg border border-accent/30">
-              <div className="flex items-start gap-4">
-                <div className="bg-accent/20 p-3 rounded-full">
-                  <Lightbulb className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">What Makes a Good Market?</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>Clear yes/no outcome that can be objectively verified</li>
-                    <li>Specific details about resolution criteria and timeline</li>
-                    <li>Interesting to a broad audience or a specific community</li>
-                    <li>Based on public information that will be available at resolution time</li>
-                    <li>Avoids ambiguous wording that could lead to confusion</li>
-                  </ul>
-                </div>
-              </div>
+              )}
+              
+              <div className="border-t my-6"></div>
             </div>
+          )}
+          
+          {/* Market request form */}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="question"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Question</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Will Bitcoin exceed $100,000 by the end of 2025?"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe the market in detail. Include clear resolution criteria."
+                        className="min-h-32"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="politics">Politics</SelectItem>
+                          <SelectItem value="crypto">Crypto</SelectItem>
+                          <SelectItem value="stocks">Stocks</SelectItem>
+                          <SelectItem value="sports">Sports</SelectItem>
+                          <SelectItem value="entertainment">Entertainment</SelectItem>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="economy">Economy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="closeDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Close Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => isBefore(date, new Date())}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Request"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+          
+          <div className="mt-8 p-4 border rounded-md bg-muted/50">
+            <h3 className="font-medium mb-2">How Market Requests Work</h3>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
+              <li>Submit your request for a prediction market with a clear yes/no question.</li>
+              <li>Our team reviews your request for clarity, feasibility, and interest.</li>
+              <li>If approved, your market goes live and you'll be notified.</li>
+              <li>Markets must have clear resolution criteria by the close date.</li>
+            </ol>
           </div>
         </div>
       </div>

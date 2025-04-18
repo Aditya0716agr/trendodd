@@ -163,7 +163,7 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
         ]);
     }
     
-    // Update market prices and volume
+    // Get current market data
     const { data: market, error: marketError } = await supabase
       .from("markets")
       .select("yes_price, no_price, volume")
@@ -179,23 +179,49 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
       return null;
     }
     
-    // Simple market impact calculation (this would be more sophisticated in real life)
-    const impact = shares * 0.0005; // 0.05% price impact per share
-    const newYesPrice = position === "yes"
-      ? type === "buy" 
-        ? Math.min(market.yes_price + impact, 0.99) 
-        : Math.max(market.yes_price - impact, 0.01)
-      : market.yes_price;
+    // Calculate price impact based on share amount and market depth
+    // Use a more sophisticated price impact model that considers order size
+    const marketDepth = 1000; // Base liquidity parameter
+    const priceImpactFactor = Math.min(shares / marketDepth, 0.1); // Cap at 10% max impact
     
-    const newNoPrice = position === "no"
-      ? type === "buy" 
-        ? Math.min(market.no_price + impact, 0.99) 
-        : Math.max(market.no_price - impact, 0.01)
-      : market.no_price;
+    // Apply asymmetric price changes based on position and action
+    let newYesPrice = market.yes_price;
+    let newNoPrice = market.no_price;
+    
+    if (type === "buy") {
+      if (position === "yes") {
+        // Buying YES increases YES price and decreases NO price
+        newYesPrice = Math.min(market.yes_price + market.yes_price * priceImpactFactor, 0.99);
+        newNoPrice = Math.max(market.no_price - market.no_price * priceImpactFactor, 0.01);
+      } else {
+        // Buying NO increases NO price and decreases YES price
+        newNoPrice = Math.min(market.no_price + market.no_price * priceImpactFactor, 0.99);
+        newYesPrice = Math.max(market.yes_price - market.yes_price * priceImpactFactor, 0.01);
+      }
+    } else if (type === "sell") {
+      if (position === "yes") {
+        // Selling YES decreases YES price and increases NO price
+        newYesPrice = Math.max(market.yes_price - market.yes_price * priceImpactFactor, 0.01);
+        newNoPrice = Math.min(market.no_price + market.no_price * priceImpactFactor, 0.99);
+      } else {
+        // Selling NO decreases NO price and increases YES price
+        newNoPrice = Math.max(market.no_price - market.no_price * priceImpactFactor, 0.01);
+        newYesPrice = Math.min(market.yes_price + market.yes_price * priceImpactFactor, 0.99);
+      }
+    }
+    
+    // Ensure the sum is close to 1 (accounting for rounding errors)
+    const sum = newYesPrice + newNoPrice;
+    if (Math.abs(sum - 1) > 0.01) {
+      const adjustmentFactor = 1 / sum;
+      newYesPrice = Math.min(newYesPrice * adjustmentFactor, 0.99);
+      newNoPrice = Math.min(newNoPrice * adjustmentFactor, 0.99);
+    }
     
     const newVolume = market.volume + (shares * price);
     
-    await supabase
+    // Update market prices and volume
+    const { error: updateMarketError } = await supabase
       .from("markets")
       .update({ 
         yes_price: newYesPrice,
@@ -204,6 +230,14 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
         updated_at: new Date().toISOString()
       })
       .eq("id", marketId);
+      
+    if (updateMarketError) {
+      toast({
+        title: "Error updating market prices",
+        description: updateMarketError.message,
+        variant: "destructive",
+      });
+    }
     
     toast({
       title: "Trade executed",

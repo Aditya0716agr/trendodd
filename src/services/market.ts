@@ -2,6 +2,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "@/hooks/use-toast";
 
+const enableRealtimeForMarkets = async () => {
+  try {
+    await supabase
+      .from('markets')
+      .on('UPDATE', (payload) => {
+        console.log('Market updated:', payload);
+      })
+      .subscribe();
+      
+    await supabase
+      .from('price_history')
+      .on('INSERT', (payload) => {
+        console.log('Price history updated:', payload);
+      })
+      .subscribe();
+  } catch (error) {
+    console.error('Error enabling realtime for markets:', error);
+  }
+};
+
+enableRealtimeForMarkets();
+
 export async function getMarkets() {
   try {
     const { data, error } = await supabase
@@ -425,5 +447,198 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
       variant: "destructive",
     });
     return null;
+  }
+}
+
+export async function submitMarketRequest(
+  question: string, 
+  description: string, 
+  category: MarketCategory,
+  closeDate: string
+) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to submit a market request.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from("market_requests")
+      .insert([
+        {
+          question,
+          description,
+          category,
+          close_date: closeDate,
+          requested_by: user.user.id,
+          status: "pending"
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Error submitting market request",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+
+    toast({
+      title: "Request submitted",
+      description: "Your market request has been submitted for review.",
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Error in submitMarketRequest:", error);
+    return null;
+  }
+}
+
+export async function getUserMarketRequests() {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from("market_requests")
+      .select("*")
+      .eq("requested_by", user.user.id)
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching market requests:", error);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getUserMarketRequests:", error);
+    return [];
+  }
+}
+
+export async function getPendingMarketRequests() {
+  try {
+    const { data, error } = await supabase
+      .from("market_requests")
+      .select(`
+        *,
+        profiles:requested_by (
+          username
+        )
+      `)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching pending market requests:", error);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getPendingMarketRequests:", error);
+    return [];
+  }
+}
+
+export async function approveMarketRequest(requestId: string) {
+  try {
+    const { data: request, error: requestError } = await supabase
+      .from("market_requests")
+      .select("*")
+      .eq("id", requestId)
+      .single();
+    
+    if (requestError) {
+      toast({
+        title: "Error fetching market request",
+        description: requestError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    const market = {
+      question: request.question,
+      description: request.description,
+      category: request.category as MarketCategory,
+      yesPrice: 0.5,
+      noPrice: 0.5,
+      volume: 0,
+      liquidity: 1000,
+      closeDate: request.close_date,
+      status: "open" as MarketStatus,
+    };
+    
+    const createdMarket = await createMarket(market);
+    
+    if (createdMarket) {
+      const { error: updateError } = await supabase
+        .from("market_requests")
+        .update({ 
+          status: "approved",
+          market_id: createdMarket.id
+        })
+        .eq("id", requestId);
+      
+      if (updateError) {
+        console.error("Error updating market request:", updateError);
+      }
+      
+      toast({
+        title: "Market request approved",
+        description: "The market has been created successfully.",
+      });
+      
+      return createdMarket;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error in approveMarketRequest:", error);
+    return null;
+  }
+}
+
+export async function rejectMarketRequest(requestId: string, reason: string) {
+  try {
+    const { error } = await supabase
+      .from("market_requests")
+      .update({ 
+        status: "rejected",
+        rejection_reason: reason
+      })
+      .eq("id", requestId);
+    
+    if (error) {
+      toast({
+        title: "Error rejecting market request",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    toast({
+      title: "Market request rejected",
+      description: "The market request has been rejected.",
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error in rejectMarketRequest:", error);
+    return false;
   }
 }

@@ -16,6 +16,7 @@ import { executeTrade, getUserWalletBalance } from "@/services/trading";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 const MarketDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +57,55 @@ const MarketDetail = () => {
     };
     
     fetchMarket();
+  }, [id]);
+  
+  // Set up real-time subscription to price changes
+  useEffect(() => {
+    if (!id) return;
+    
+    // Subscribe to market updates
+    const channel = supabase
+      .channel('market-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'markets',
+          filter: `id=eq.${id}`
+        },
+        async (payload) => {
+          console.log("Market update received:", payload);
+          // Refresh market data when updates occur
+          const updatedMarket = await getMarketById(id);
+          if (updatedMarket) {
+            setMarket(updatedMarket);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'price_history',
+          filter: `market_id=eq.${id}`
+        },
+        async (payload) => {
+          console.log("Price history update received:", payload);
+          // Refresh market data when price history is updated
+          const updatedMarket = await getMarketById(id);
+          if (updatedMarket) {
+            setMarket(updatedMarket);
+          }
+        }
+      )
+      .subscribe();
+      
+    // Clean up subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
   
   // Fetch wallet balance if user is logged in
@@ -152,12 +202,6 @@ const MarketDetail = () => {
         const newBalance = await getUserWalletBalance();
         setWalletBalance(newBalance);
         
-        // Refresh market data to show updated prices
-        const updatedMarket = await getMarketById(id);
-        if (updatedMarket) {
-          setMarket(updatedMarket);
-        }
-        
         // Reset shares to 1
         setShares("1");
       }
@@ -168,9 +212,6 @@ const MarketDetail = () => {
     }
   };
   
-  // Add the following import and code to the MarketDetail component:
-  
-  // In MarketDetail component, add a new function for resolving markets:
   const handleResolveMarket = async (resolution: "yes" | "no") => {
     if (!market) return;
     
@@ -435,9 +476,7 @@ const MarketDetail = () => {
           </div>
         </div>
         
-        {/* Add the following JSX before the closing </div> in the market detail section: */}
-        
-        {/* Add a market resolution section if market is still open */}
+        {/* Market resolution section if market is still open */}
         {market?.status === "open" && (
           <div className="mt-6 p-4 border border-accent/30 rounded-lg bg-accent/10">
             <h3 className="font-semibold mb-2">Admin: Resolve Market</h3>
