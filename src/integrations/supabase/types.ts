@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      market_requests: {
+        Row: {
+          category: string
+          close_date: string
+          created_at: string
+          description: string
+          id: string
+          market_id: string | null
+          question: string
+          rejection_reason: string | null
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          category: string
+          close_date: string
+          created_at?: string
+          description: string
+          id?: string
+          market_id?: string | null
+          question: string
+          rejection_reason?: string | null
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          category?: string
+          close_date?: string
+          created_at?: string
+          description?: string
+          id?: string
+          market_id?: string | null
+          question?: string
+          rejection_reason?: string | null
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_requests_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       markets: {
         Row: {
           category: string

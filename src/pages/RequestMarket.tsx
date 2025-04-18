@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -35,7 +34,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const RequestMarket = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // Changed from isLoading to loading
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRequests, setUserRequests] = useState<any[]>([]);
@@ -107,7 +106,8 @@ const RequestMarket = () => {
     }
   };
   
-  if (isLoading) {
+  // Modify rendering logic to handle different loading states
+  if (authLoading) {
     return (
       <Layout>
         <div className="container py-8">

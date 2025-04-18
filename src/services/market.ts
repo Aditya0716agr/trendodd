@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "@/hooks/use-toast";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const enableRealtimeForMarkets = async () => {
   try {
