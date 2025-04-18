@@ -9,7 +9,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "@/services/auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Coin } from "lucide-react";
+import { Coins } from "lucide-react";
 import { useEffect } from "react";
 import { getUserWalletBalance } from "@/services/trading";
 
@@ -124,6 +124,16 @@ const Navbar = () => {
                     Signed in as
                   </p>
                   <p className="text-sm font-semibold">{user.email}</p>
+                  <div className="flex items-center space-x-2 py-2">
+                    <Coins className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      {isLoadingBalance ? (
+                        <Skeleton className="h-4 w-16 inline-block" />
+                      ) : (
+                        `${walletBalance?.toFixed(2) || 0} coins`
+                      )}
+                    </span>
+                  </div>
                   <Button variant="destructive" size="sm" onClick={handleSignOut}>
                     Sign out
                   </Button>
@@ -147,28 +157,40 @@ const Navbar = () => {
         {loading ? (
           <Skeleton className="h-10 w-[200px]" />
         ) : user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.avatar_url || ""} alt={user.email || "User"} />
-                  <AvatarFallback>{getInitials(user.email || "User")}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled={isLoadingBalance}>
-                <Coin className="mr-2 h-4 w-4" />
-                Wallet: {isLoadingBalance ? <Skeleton className="inline-block h-4 w-16" /> : walletBalance?.toFixed(2)}
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href="/dashboard">Dashboard</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2 mr-2">
+              <Coins className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {isLoadingBalance ? (
+                  <Skeleton className="h-4 w-16 inline-block" />
+                ) : (
+                  `${walletBalance?.toFixed(2) || 0}`
+                )}
+              </span>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" alt={user.email || "User"} />
+                    <AvatarFallback>{getInitials(user.email || "User")}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled={isLoadingBalance}>
+                  <Coins className="mr-2 h-4 w-4" />
+                  Wallet: {isLoadingBalance ? <Skeleton className="inline-block h-4 w-16" /> : walletBalance?.toFixed(2)}
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/dashboard">Dashboard</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <div className="space-x-2">
             <Button variant="outline" size="sm" asChild>
