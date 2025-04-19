@@ -81,6 +81,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Add profile data to user metadata for easy access
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: { wallet_balance: profile.wallet_balance }
+      });
+
+      if (metadataError) {
+        console.error("Error updating user metadata:", metadataError);
+      }
+
       // Add 100 bonus coins for first login
       const newBalance = profile.wallet_balance + 100;
       const { error: updateError } = await supabase
@@ -92,6 +101,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error updating balance:", updateError);
         return;
       }
+
+      // Update user metadata with new balance
+      await supabase.auth.updateUser({
+        data: { wallet_balance: newBalance }
+      });
 
       // Record the transaction
       await supabase

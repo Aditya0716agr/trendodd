@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const generateData = () => {
@@ -36,21 +36,50 @@ interface AnimatedChartProps {
 }
 
 const AnimatedChart = ({ className = "" }: AnimatedChartProps) => {
-  const chartData = useRef(generateData());
+  const [chartData, setChartData] = useState(generateData());
+  
+  // Periodically update chart data for animation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const data = [...chartData];
+      const lastPoint = data[data.length - 1];
+      
+      // Create new point with slight variation
+      const volatility = 3;
+      const change = (Math.random() * volatility * 2) - volatility;
+      let newYesPrice = Math.round(Math.max(1, Math.min(99, lastPoint.yes + change)));
+      const newNoPrice = 100 - newYesPrice;
+      
+      // Add new date
+      const newDate = new Date();
+      
+      // Remove first point and add new point
+      data.shift();
+      data.push({
+        date: newDate.toLocaleDateString(),
+        yes: newYesPrice,
+        no: newNoPrice
+      });
+      
+      setChartData(data);
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [chartData]);
   
   return (
     <div className={`w-full ${className}`}>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData.current}>
+        <LineChart data={chartData}>
           <XAxis 
             dataKey="date" 
             tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => {
-              if (chartData.current.length <= 10) return value;
+              if (chartData.length <= 10) return value;
               // Show only some dates to avoid overcrowding
-              const idx = chartData.current.findIndex(item => item.date === value);
+              const idx = chartData.findIndex(item => item.date === value);
               return idx % 5 === 0 ? value : '';
             }}
           />

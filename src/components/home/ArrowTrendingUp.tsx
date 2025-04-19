@@ -13,6 +13,7 @@ const ArrowTrendingUp = (props: SVGProps<SVGSVGElement>) => {
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round" 
+      className="animate-pulse"
       {...props}
     >
       <path d="M22 7L13.5 15.5L8.5 10.5L2 17"></path>

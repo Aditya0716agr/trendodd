@@ -1,36 +1,40 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Menu, X } from "lucide-react";
-import Logo from "@/components/home/Logo";
+import NavbarBranding from "./NavbarBranding";
+import { signOut } from "@/services/auth";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   return (
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Logo />
-          </Link>
+          <NavbarBranding />
           
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/markets" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link to="/markets" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
               Markets
             </Link>
-            <Link to="/how-it-works" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link to="/how-it-works" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
               How It Works
             </Link>
             {user && (
-              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
                 Dashboard
               </Link>
             )}
@@ -45,23 +49,23 @@ const Navbar = () => {
               <>
                 <div className="flex items-center mr-2">
                   <div className="text-sm font-medium">{user.email}</div>
-                  <div className="ml-2 px-2 py-1 bg-primary/10 rounded-md text-xs font-medium">
-                    {user.balance.toLocaleString()} coins
+                  <div className="ml-2 px-2 py-1 bg-primary/10 rounded-md text-xs font-medium animate-pulse">
+                    {user.user_metadata?.wallet_balance || 1000} coins
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={logout}>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="hover:scale-105 transform duration-300">
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="sm">Register</Button>
+                  <Button size="sm" className="hover:scale-105 transform duration-300">Register</Button>
                 </Link>
               </>
             )}
@@ -108,10 +112,10 @@ const Navbar = () => {
                 <div className="px-2 py-2">
                   <div className="font-medium">{user.email}</div>
                   <div className="text-sm text-muted-foreground mt-1">
-                    Balance: {user.balance.toLocaleString()} coins
+                    Balance: {user.user_metadata?.wallet_balance || 1000} coins
                   </div>
                 </div>
-                <Button variant="ghost" onClick={() => { logout(); setIsMenuOpen(false); }}>
+                <Button variant="ghost" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
                   Logout
                 </Button>
               </>

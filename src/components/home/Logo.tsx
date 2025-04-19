@@ -1,5 +1,5 @@
 
-import { ArrowTrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface LogoProps {
   variant?: 'default' | 'white';
@@ -24,7 +24,7 @@ const Logo = ({ variant = 'default', size = 'md' }: LogoProps) => {
   return (
     <div className={`flex items-center gap-1.5 font-bold ${sizeClasses[size]}`}>
       <div className="relative">
-        <ArrowTrendingUp className="text-primary" size={iconSize[size]} />
+        <TrendingUp className="text-primary" size={iconSize[size]} />
       </div>
       <span className={`${textColor} tracking-tight`}>
         Trend<span className="text-primary">Odds</span>
