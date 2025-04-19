@@ -37,7 +37,8 @@ const Markets = () => {
       setIsLoading(true);
       try {
         const marketData = await getMarkets();
-        setMarkets(marketData);
+        // Add type assertion to fix the type error
+        setMarkets(marketData as Market[]);
       } catch (error) {
         console.error("Error fetching markets:", error);
       } finally {
@@ -112,7 +113,7 @@ const Markets = () => {
 
   const MarketCard = ({ market }: { market: Market }) => (
     <Link to={`/market/${market.id}`} key={market.id} className="block hover:no-underline">
-      <div className="market-card flex flex-col md:flex-row md:items-center">
+      <div className="market-card flex flex-col md:flex-row md:items-center animate-fade-in">
         <div className="flex-grow mb-4 md:mb-0 md:mr-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
@@ -153,7 +154,7 @@ const Markets = () => {
   );
 
   const MarketSkeleton = () => (
-    <div className="market-card">
+    <div className="market-card animate-pulse">
       <div className="flex flex-col md:flex-row md:items-center">
         <div className="flex-grow mb-4 md:mb-0 md:mr-4">
           <div className="flex items-center gap-2 mb-2">
@@ -179,7 +180,7 @@ const Markets = () => {
   return (
     <Layout>
       <div className="container py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in">
           <div>
             <h1 className="text-3xl font-bold">Explore Markets</h1>
             <p className="text-muted-foreground">Discover and trade on prediction markets</p>
@@ -198,7 +199,7 @@ const Markets = () => {
         </div>
         
         <Tabs defaultValue="all" className="mb-8" onValueChange={(value) => setActiveCategory(value as MarketCategory | "all")}>
-          <TabsList className="mb-6 flex flex-wrap h-auto">
+          <TabsList className="mb-6 flex flex-wrap h-auto animate-fade-in">
             <TabsTrigger value="all" className="transition-all duration-200">All Markets</TabsTrigger>
             {marketCategories.map((category) => (
               <TabsTrigger key={category.id} value={category.id} className="transition-all duration-200">
@@ -207,7 +208,7 @@ const Markets = () => {
             ))}
           </TabsList>
           
-          <div className="flex justify-end mb-4 gap-2">
+          <div className="flex justify-end mb-4 gap-2 animate-fade-in">
             <Button
               variant="outline"
               size="sm"
@@ -215,7 +216,7 @@ const Markets = () => {
               onClick={() => toggleSort("volume")}
             >
               Volume
-              <ArrowUpDown className="h-3 w-3" />
+              <ArrowUpDown className="h-3 w-4" />
             </Button>
             <Button
               variant="outline"
@@ -224,7 +225,7 @@ const Markets = () => {
               onClick={() => toggleSort("closeDate")}
             >
               Closing Date
-              <ArrowUpDown className="h-3 w-3" />
+              <ArrowUpDown className="h-3 w-4" />
             </Button>
           </div>
 
@@ -238,7 +239,7 @@ const Markets = () => {
                 <MarketCard key={market.id} market={market} />
               ))
             ) : (
-              <div className="text-center py-12 border rounded-lg bg-muted/50">
+              <div className="text-center py-12 border rounded-lg bg-muted/50 animate-fade-in">
                 <p className="text-muted-foreground">No markets found matching your criteria.</p>
               </div>
             )}

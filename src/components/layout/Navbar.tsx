@@ -1,210 +1,134 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/mode-toggle";
-import { useToast } from "@/hooks/use-toast";
-import { signOut } from "@/services/auth";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Coins } from "lucide-react";
-import { useEffect } from "react";
-import { getUserWalletBalance } from "@/services/trading";
-
-const NavItems = ({ pathname }: { pathname: string }) => (
-  <div className="mx-auto w-full max-w-screen-xl space-x-4 py-4 md:block">
-    <Button variant="ghost" size="sm" asChild>
-      <a href="/" className={pathname === "/" ? "font-bold" : ""}>
-        Home
-      </a>
-    </Button>
-    <Button variant="ghost" size="sm" asChild>
-      <a href="/markets" className={pathname === "/markets" ? "font-bold" : ""}>
-        Markets
-      </a>
-    </Button>
-    <Button variant="ghost" size="sm" asChild>
-      <a href="/how-it-works" className={pathname === "/how-it-works" ? "font-bold" : ""}>
-        How it works
-      </a>
-    </Button>
-    <Button variant="ghost" size="sm" asChild>
-      <a href="/request-market" className={pathname === "/request-market" ? "font-bold" : ""}>
-        Request Market
-      </a>
-    </Button>
-  </div>
-);
+import { Menu, X } from "lucide-react";
+import Logo from "@/components/home/Logo";
 
 const Navbar = () => {
-  const { user, session, loading } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { pathname } = location;
+  const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
 
-  useEffect(() => {
-    const fetchWalletBalance = async () => {
-      setIsLoadingBalance(true);
-      try {
-        const balance = await getUserWalletBalance();
-        setWalletBalance(balance);
-      } catch (error) {
-        console.error("Failed to fetch wallet balance:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch wallet balance.",
-          variant: "destructive",
-        });
-        setWalletBalance(0);
-      } finally {
-        setIsLoadingBalance(false);
-      }
-    };
-
-    if (user) {
-      fetchWalletBalance();
-    } else {
-      setWalletBalance(null);
-      setIsLoadingBalance(false);
-    }
-  }, [user, toast]);
-
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      navigate("/login");
-      toast({
-        description: "You have been successfully signed out.",
-      });
-    }
-  };
-
-  const getInitials = (email: string) => {
-    return email
-      .split('@')[0]
-      .split(' ')
-      .map((s) => s[0])
-      .join('')
-      .toUpperCase();
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
-    <div className="bg-background sticky top-0 z-50 border-b">
-      <div className="container flex items-center justify-between">
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <SheetTrigger className="md:hidden">
-            <Button variant="ghost" size="sm">
-              Menu
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="sm:w-64">
-            <SheetHeader className="text-left">
-              <SheetTitle>Menu</SheetTitle>
-              <SheetDescription>
-                Explore the TrendOdds platform.
-              </SheetDescription>
-            </SheetHeader>
-            <NavItems pathname={pathname} />
-            <div className="mt-6">
-              {user ? (
-                <div className="flex flex-col space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Signed in as
-                  </p>
-                  <p className="text-sm font-semibold">{user.email}</p>
-                  <div className="flex items-center space-x-2 py-2">
-                    <Coins className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      {isLoadingBalance ? (
-                        <Skeleton className="h-4 w-16 inline-block" />
-                      ) : (
-                        `${walletBalance?.toFixed(2) || 0} coins`
-                      )}
-                    </span>
+    <header className="border-b bg-background sticky top-0 z-50">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Logo />
+          </Link>
+          
+          <nav className="hidden md:flex items-center gap-6">
+            <Link to="/markets" className="text-sm font-medium hover:text-primary transition-colors">
+              Markets
+            </Link>
+            <Link to="/how-it-works" className="text-sm font-medium hover:text-primary transition-colors">
+              How It Works
+            </Link>
+            {user && (
+              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+                Dashboard
+              </Link>
+            )}
+          </nav>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          
+          <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                <div className="flex items-center mr-2">
+                  <div className="text-sm font-medium">{user.email}</div>
+                  <div className="ml-2 px-2 py-1 bg-primary/10 rounded-md text-xs font-medium">
+                    {user.balance.toLocaleString()} coins
                   </div>
-                  <Button variant="destructive" size="sm" onClick={handleSignOut}>
-                    Sign out
-                  </Button>
                 </div>
-              ) : (
-                <div className="flex flex-col space-y-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/login">Log In</a>
-                  </Button>
-                  <Button size="sm" asChild>
-                    <a href="/register">Sign Up</a>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        <NavItems pathname={pathname} />
-
-        {loading ? (
-          <Skeleton className="h-10 w-[200px]" />
-        ) : user ? (
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-2 mr-2">
-              <Coins className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {isLoadingBalance ? (
-                  <Skeleton className="h-4 w-16 inline-block" />
-                ) : (
-                  `${walletBalance?.toFixed(2) || 0}`
-                )}
-              </span>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={user.email || "User"} />
-                    <AvatarFallback>{getInitials(user.email || "User")}</AvatarFallback>
-                  </Avatar>
+                <Button variant="ghost" size="sm" onClick={logout}>
+                  Logout
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled={isLoadingBalance}>
-                  <Coins className="mr-2 h-4 w-4" />
-                  Wallet: {isLoadingBalance ? <Skeleton className="inline-block h-4 w-16" /> : walletBalance?.toFixed(2)}
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="/dashboard">Dashboard</a>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm">Register</Button>
+                </Link>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="space-x-2">
-            <Button variant="outline" size="sm" asChild>
-              <a href="/login">Log In</a>
-            </Button>
-            <Button size="sm" asChild>
-              <a href="/register">Sign Up</a>
-            </Button>
-          </div>
-        )}
-
-        <ModeToggle />
+          
+          <button className="md:hidden" onClick={toggleMenu}>
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
-    </div>
+      
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="md:hidden border-t">
+          <div className="container py-4 flex flex-col gap-4">
+            <Link 
+              to="/markets" 
+              className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Markets
+            </Link>
+            <Link 
+              to="/how-it-works" 
+              className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              How It Works
+            </Link>
+            {user && (
+              <Link 
+                to="/dashboard" 
+                className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
+            
+            <div className="border-t my-2"></div>
+            
+            {user ? (
+              <>
+                <div className="px-2 py-2">
+                  <div className="font-medium">{user.email}</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Balance: {user.balance.toLocaleString()} coins
+                  </div>
+                </div>
+                <Button variant="ghost" onClick={() => { logout(); setIsMenuOpen(false); }}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">Sign In</Button>
+                </Link>
+                <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full">Register</Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 
