@@ -399,6 +399,7 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
         }
       }
       
+      // Remove all positions after market resolution
       await supabase
         .from("positions")
         .delete()

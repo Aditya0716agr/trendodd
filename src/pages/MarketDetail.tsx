@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { format, parseISO, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,6 @@ const MarketDetail = () => {
   const [cost, setCost] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [graphUpdateInterval, setGraphUpdateInterval] = useState<NodeJS.Timeout | null>(null);
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
   
@@ -60,71 +60,44 @@ const MarketDetail = () => {
   }, [id]);
   
   useEffect(() => {
-    const updateGraphPeriodically = async () => {
-      if (!id) return;
-
-      try {
+    if (!id) return;
+    
+    // Set up realtime subscriptions for market and price history updates
+    const marketChannel = supabase
+      .channel('market-detail-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'markets',
+        filter: `id=eq.${id}`
+      }, async () => {
+        console.log("Market update received");
         const updatedMarket = await getMarketById(id);
-        
         if (updatedMarket) {
           setMarket(updatedMarket);
         }
-      } catch (error) {
-        console.error("Error updating market data:", error);
-      }
-    };
-
-    const interval = setInterval(updateGraphPeriodically, 300000);
-    setGraphUpdateInterval(interval);
-
-    return () => {
-      if (graphUpdateInterval) {
-        clearInterval(graphUpdateInterval);
-      }
-    };
-  }, [id]);
-  
-  useEffect(() => {
-    if (!id) return;
-    
-    const channel = supabase
-      .channel('market-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'markets',
-          filter: `id=eq.${id}`
-        },
-        async (payload) => {
-          console.log("Market update received:", payload);
-          const updatedMarket = await getMarketById(id);
-          if (updatedMarket) {
-            setMarket(updatedMarket);
-          }
+      })
+      .subscribe();
+      
+    const priceHistoryChannel = supabase
+      .channel('price-history-detail-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'price_history',
+        filter: `market_id=eq.${id}`
+      }, async () => {
+        console.log("Price history update received");
+        const updatedMarket = await getMarketById(id);
+        if (updatedMarket) {
+          setMarket(updatedMarket);
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'price_history',
-          filter: `market_id=eq.${id}`
-        },
-        async (payload) => {
-          console.log("Price history update received:", payload);
-          const updatedMarket = await getMarketById(id);
-          if (updatedMarket) {
-            setMarket(updatedMarket);
-          }
-        }
-      )
+      })
       .subscribe();
       
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(marketChannel);
+      supabase.removeChannel(priceHistoryChannel);
     };
   }, [id]);
   
@@ -169,6 +142,7 @@ const MarketDetail = () => {
     
     return market.priceHistory.map(point => ({
       date: format(parseISO(point.timestamp), "MMM d"),
+      fullDate: format(parseISO(point.timestamp), "MMM d, yyyy HH:mm"),
       yes: parseFloat((point.yesPrice * 100).toFixed(0)),
       no: parseFloat((point.noPrice * 100).toFixed(0))
     }));
@@ -215,6 +189,12 @@ const MarketDetail = () => {
         
         const newBalance = await getUserWalletBalance();
         setWalletBalance(newBalance);
+        
+        // Refresh market data to show updated prices
+        const updatedMarket = await getMarketById(id);
+        if (updatedMarket) {
+          setMarket(updatedMarket);
+        }
         
         setShares("1");
       }
@@ -300,21 +280,21 @@ const MarketDetail = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
-                {market.category}
+                {market?.category}
               </span>
               <div className="flex items-center text-xs text-muted-foreground gap-1">
                 <Clock className="h-3 w-3" />
-                <span>Closes: {formatDate(market.closeDate)}</span>
+                <span>Closes: {market ? formatDate(market.closeDate) : ''}</span>
               </div>
             </div>
             
-            <h1 className="text-2xl md:text-3xl font-bold mb-4">{market.question}</h1>
-            <p className="text-muted-foreground mb-8">{market.description}</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-4">{market?.question}</h1>
+            <p className="text-muted-foreground mb-8">{market?.description}</p>
             
             <div className="bg-card rounded-lg border p-4 mb-8">
               <h2 className="text-lg font-semibold mb-4">Price History</h2>
               <div className="h-64">
-                {market.priceHistory && market.priceHistory.length > 0 ? (
+                {market?.priceHistory && market.priceHistory.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={formatChartData()}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -322,7 +302,12 @@ const MarketDetail = () => {
                       <YAxis domain={[0, 100]} unit="¢" />
                       <Tooltip 
                         formatter={(value) => [`${value}¢`, '']}
-                        labelFormatter={(label) => `Date: ${label}`} 
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload.length > 0 && 'fullDate' in payload[0].payload) {
+                            return `${payload[0].payload.fullDate}`;
+                          }
+                          return label;
+                        }} 
                       />
                       <Legend />
                       <Line 
@@ -359,7 +344,11 @@ const MarketDetail = () => {
                   <DollarSign className="h-5 w-5 text-muted-foreground mr-1" />
                   <h3 className="font-medium">Volume</h3>
                 </div>
-                <p className="text-2xl font-bold">{market.volume > 1000 ? (market.volume / 1000).toFixed(1) + 'K' : market.volume.toFixed(0)}</p>
+                <p className="text-2xl font-bold">
+                  {market?.volume && market.volume > 1000 
+                    ? (market.volume / 1000).toFixed(1) + 'K' 
+                    : market?.volume?.toFixed(0) || 0}
+                </p>
               </div>
               
               <div className="bg-card rounded-lg border p-4 text-center">
@@ -367,7 +356,11 @@ const MarketDetail = () => {
                   <ArrowLeftRight className="h-5 w-5 text-muted-foreground mr-1" />
                   <h3 className="font-medium">Liquidity</h3>
                 </div>
-                <p className="text-2xl font-bold">{market.liquidity > 1000 ? (market.liquidity / 1000).toFixed(1) + 'K' : market.liquidity.toFixed(0)}</p>
+                <p className="text-2xl font-bold">
+                  {market?.liquidity && market.liquidity > 1000 
+                    ? (market.liquidity / 1000).toFixed(1) + 'K' 
+                    : market?.liquidity?.toFixed(0) || 0}
+                </p>
               </div>
               
               <div className="bg-card rounded-lg border p-4 text-center">
@@ -375,7 +368,7 @@ const MarketDetail = () => {
                   <Users className="h-5 w-5 text-muted-foreground mr-1" />
                   <h3 className="font-medium">Total Bets</h3>
                 </div>
-                <p className="text-2xl font-bold">{market.totalBets}</p>
+                <p className="text-2xl font-bold">{market?.totalBets || 0}</p>
               </div>
             </div>
           </div>
@@ -391,95 +384,108 @@ const MarketDetail = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-green-500/10 p-3 rounded-md text-center">
                     <div className="text-xs mb-1">YES</div>
-                    <div className="text-2xl font-bold text-green-600">{Math.round(market.yesPrice * 100)}¢</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {market ? Math.round(market.yesPrice * 100) : 0}¢
+                    </div>
                   </div>
                   <div className="bg-red-500/10 p-3 rounded-md text-center">
                     <div className="text-xs mb-1">NO</div>
-                    <div className="text-2xl font-bold text-red-600">{Math.round(market.noPrice * 100)}¢</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {market ? Math.round(market.noPrice * 100) : 0}¢
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <Tabs defaultValue="buy" className="mb-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="buy">Buy</TabsTrigger>
-                  <TabsTrigger value="sell" disabled>Sell</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="buy" className="space-y-4 pt-4">
-                  <div>
-                    <Label htmlFor="position">Position</Label>
-                    <RadioGroup 
-                      id="position" 
-                      className="flex gap-4 mt-2" 
-                      defaultValue="yes"
-                      value={position}
-                      onValueChange={(value) => setPosition(value as "yes" | "no")}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="yes" id="yes" />
-                        <Label htmlFor="yes" className="font-medium cursor-pointer">YES</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="no" id="no" />
-                        <Label htmlFor="no" className="font-medium cursor-pointer">NO</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+              {/* Hide trading UI if market is resolved */}
+              {(!market || market.status === "open") ? (
+                <Tabs defaultValue="buy" className="mb-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="buy">Buy</TabsTrigger>
+                    <TabsTrigger value="sell" disabled>Sell</TabsTrigger>
+                  </TabsList>
                   
-                  <div>
-                    <Label htmlFor="shares">Number of Shares</Label>
-                    <Input 
-                      id="shares" 
-                      type="number" 
-                      min="1" 
-                      step="1"
-                      value={shares}
-                      onChange={(e) => setShares(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="pt-2">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Cost</span>
-                      <span className="font-medium">{cost.toFixed(2)} coins</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-4">
-                      <span>If correct, you'll get</span>
-                      <span className="font-medium">{shares && !isNaN(parseFloat(shares)) ? (parseFloat(shares)).toFixed(0) : 0} coins</span>
+                  <TabsContent value="buy" className="space-y-4 pt-4">
+                    <div>
+                      <Label htmlFor="position">Position</Label>
+                      <RadioGroup 
+                        id="position" 
+                        className="flex gap-4 mt-2" 
+                        defaultValue="yes"
+                        value={position}
+                        onValueChange={(value) => setPosition(value as "yes" | "no")}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="yes" />
+                          <Label htmlFor="yes" className="font-medium cursor-pointer">YES</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="no" />
+                          <Label htmlFor="no" className="font-medium cursor-pointer">NO</Label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     
-                    {user && (
-                      <div className="text-sm text-muted-foreground mb-4">
-                        Your balance: {walletBalance.toFixed(2)} coins
+                    <div>
+                      <Label htmlFor="shares">Number of Shares</Label>
+                      <Input 
+                        id="shares" 
+                        type="number" 
+                        min="1" 
+                        step="1"
+                        value={shares}
+                        onChange={(e) => setShares(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div className="pt-2">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Cost</span>
+                        <span className="font-medium">{cost.toFixed(2)} coins</span>
                       </div>
-                    )}
-                    
-                    <Button 
-                      className={`w-full ${position === "yes" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
-                      onClick={handleBuy}
-                      disabled={!user || isNaN(parseFloat(shares)) || parseFloat(shares) <= 0 || cost > walletBalance}
-                    >
-                      Buy {position.toUpperCase()} Shares
-                    </Button>
-                    
-                    {!user && (
-                      <p className="text-xs text-muted-foreground mt-3 text-center">
-                        Please <a href="/login" className="text-primary hover:underline">log in</a> to trade on this market
+                      <div className="flex justify-between text-sm mb-4">
+                        <span>If correct, you'll get</span>
+                        <span className="font-medium">{shares && !isNaN(parseFloat(shares)) ? (parseFloat(shares)).toFixed(0) : 0} coins</span>
+                      </div>
+                      
+                      {user && (
+                        <div className="text-sm text-muted-foreground mb-4">
+                          Your balance: {walletBalance.toFixed(2)} coins
+                        </div>
+                      )}
+                      
+                      <Button 
+                        className={`w-full ${position === "yes" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                        onClick={handleBuy}
+                        disabled={!user || isNaN(parseFloat(shares)) || parseFloat(shares) <= 0 || cost > walletBalance}
+                      >
+                        Buy {position.toUpperCase()} Shares
+                      </Button>
+                      
+                      {!user && (
+                        <p className="text-xs text-muted-foreground mt-3 text-center">
+                          Please <a href="/login" className="text-primary hover:underline">log in</a> to trade on this market
+                        </p>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="sell">
+                    <div className="py-8 text-center">
+                      <p className="text-muted-foreground">
+                        Selling functionality will be available soon
                       </p>
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="sell">
-                  <div className="py-8 text-center">
-                    <p className="text-muted-foreground">
-                      Selling functionality will be available soon
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <div className="py-4 text-center bg-muted/20 rounded-md">
+                  <p className="text-muted-foreground">
+                    Trading is no longer available as this market has been resolved.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { Market, MarketCategory, MarketStatus } from "@/types/market";
 import { getMarkets } from "@/services/market";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 const marketCategories = [
   { id: "crypto", name: "Crypto" },
@@ -36,21 +37,7 @@ const Markets = () => {
       setIsLoading(true);
       try {
         const marketData = await getMarkets();
-        const typedMarkets: Market[] = marketData.map((market: any) => ({
-          id: market.id,
-          question: market.question,
-          description: market.description || '',
-          category: market.category as MarketCategory,
-          yesPrice: market.yes_price,
-          noPrice: market.no_price,
-          volume: market.volume,
-          liquidity: market.liquidity,
-          closeDate: market.close_date,
-          status: market.status as MarketStatus,
-          priceHistory: market.priceHistory || [],
-          totalBets: market.totalBets || 0
-        }));
-        setMarkets(typedMarkets);
+        setMarkets(marketData);
       } catch (error) {
         console.error("Error fetching markets:", error);
       } finally {
@@ -59,6 +46,22 @@ const Markets = () => {
     };
 
     fetchMarkets();
+
+    // Set up realtime subscription for market updates
+    const marketChannel = supabase
+      .channel('market-price-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'markets'
+      }, () => {
+        fetchMarkets();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(marketChannel);
+    };
   }, []);
 
   useEffect(() => {
@@ -128,17 +131,21 @@ const Markets = () => {
             <div className="text-xs text-muted-foreground mb-1">Current Prices</div>
             <div className="flex gap-3">
               <div>
-                <span className="price-yes">Yes: {Math.round(market.yesPrice * 100)}¢</span>
+                <span className="font-medium text-green-600">Yes: {Math.round(market.yesPrice * 100)}¢</span>
               </div>
               <div>
-                <span className="price-no">No: {Math.round(market.noPrice * 100)}¢</span>
+                <span className="font-medium text-red-600">No: {Math.round(market.noPrice * 100)}¢</span>
               </div>
             </div>
           </div>
           
           <div className="text-right">
             <div className="text-xs text-muted-foreground mb-1">Volume</div>
-            <div className="font-medium">{(market.volume / 1000).toFixed(0)}K</div>
+            <div className="font-medium">
+              {market.volume > 1000 
+                ? `${(market.volume / 1000).toFixed(1)}K` 
+                : market.volume.toFixed(0)}
+            </div>
           </div>
         </div>
       </div>
