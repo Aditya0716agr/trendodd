@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "sonner";
@@ -6,15 +7,23 @@ import { addDays } from "date-fns";
 const enableRealtimeForMarkets = async () => {
   try {
     await supabase
-      .from('markets')
-      .on('UPDATE', (payload) => {
+      .channel('price-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'markets'
+      }, (payload) => {
         console.log('Market updated:', payload);
       })
       .subscribe();
       
     await supabase
-      .from('price_history')
-      .on('INSERT', (payload) => {
+      .channel('price-history-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'price_history'
+      }, (payload) => {
         console.log('Price history updated:', payload);
       })
       .subscribe();
@@ -33,11 +42,7 @@ export async function getMarkets() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast({
-        title: "Error fetching markets",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error fetching markets: " + error.message);
       throw error;
     }
 
@@ -103,11 +108,7 @@ export async function getMarketById(id: string): Promise<Market | null> {
       .single();
 
     if (error) {
-      toast({
-        title: "Error fetching market",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error fetching market: " + error.message);
       throw error;
     }
 
@@ -159,11 +160,7 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
   try {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a market.",
-        variant: "destructive",
-      });
+      toast.error("Please sign in to create a market.");
       return null;
     }
     
@@ -187,11 +184,7 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       .single();
 
     if (error) {
-      toast({
-        title: "Error creating market",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error creating market: " + error.message);
       throw error;
     }
 
@@ -210,10 +203,7 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       console.error("Error creating initial price history:", priceHistoryError);
     }
 
-    toast({
-      title: "Market created",
-      description: "Your market has been created successfully.",
-    });
+    toast.success("Your market has been created successfully.");
 
     return data;
   } catch (error) {
@@ -324,10 +314,7 @@ export async function seedMarkets() {
       console.log("Created seed market:", data.id);
     }
     
-    toast({
-      title: "Markets seeded",
-      description: "Test markets have been created successfully.",
-    });
+    toast.success("Test markets have been created successfully.");
     
   } catch (error) {
     console.error("Error in seedMarkets:", error);
@@ -338,11 +325,7 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
   try {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to resolve markets.",
-        variant: "destructive",
-      });
+      toast.error("Please sign in to resolve markets.");
       return null;
     }
     
@@ -353,11 +336,7 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
       .single();
       
     if (marketError) {
-      toast({
-        title: "Error fetching market",
-        description: marketError.message,
-        variant: "destructive",
-      });
+      toast.error("Error fetching market: " + marketError.message);
       return null;
     }
     
@@ -369,11 +348,7 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
       .eq("id", marketId);
       
     if (updateError) {
-      toast({
-        title: "Error resolving market",
-        description: updateError.message,
-        variant: "destructive",
-      });
+      toast.error("Error resolving market: " + updateError.message);
       return null;
     }
     
@@ -383,11 +358,7 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
       .eq("market_id", marketId);
       
     if (positionsError) {
-      toast({
-        title: "Error fetching positions",
-        description: positionsError.message,
-        variant: "destructive",
-      });
+      toast.error("Error fetching positions: " + positionsError.message);
       return null;
     }
     
@@ -434,19 +405,12 @@ export async function resolveMarket(marketId: string, resolution: "yes" | "no") 
         .eq("id", position.id);
     }
     
-    toast({
-      title: "Market resolved",
-      description: `The market has been resolved as ${resolution.toUpperCase()}.`,
-    });
+    toast.success(`The market has been resolved as ${resolution.toUpperCase()}.`);
     
     return { success: true };
   } catch (error) {
     console.error("Error resolving market:", error);
-    toast({
-      title: "Error resolving market",
-      description: "An unexpected error occurred while resolving the market.",
-      variant: "destructive",
-    });
+    toast.error("An unexpected error occurred while resolving the market.");
     return null;
   }
 }
@@ -460,11 +424,7 @@ export async function submitMarketRequest(
   try {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to submit a market request.",
-        variant: "destructive",
-      });
+      toast.error("Please sign in to submit a market request.");
       return null;
     }
     
@@ -484,18 +444,11 @@ export async function submitMarketRequest(
       .single();
 
     if (error) {
-      toast({
-        title: "Error submitting market request",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error submitting market request: " + error.message);
       throw error;
     }
 
-    toast({
-      title: "Request submitted",
-      description: "Your market request has been submitted for review.",
-    });
+    toast.success("Your market request has been submitted for review.");
 
     return data;
   } catch (error) {
@@ -610,11 +563,7 @@ export async function approveMarketRequest(requestId: string) {
       .single();
     
     if (requestError) {
-      toast({
-        title: "Error fetching market request",
-        description: requestError.message,
-        variant: "destructive",
-      });
+      toast.error("Error fetching market request: " + requestError.message);
       return null;
     }
     
@@ -645,10 +594,7 @@ export async function approveMarketRequest(requestId: string) {
         console.error("Error updating market request:", updateError);
       }
       
-      toast({
-        title: "Market request approved",
-        description: "The market has been created successfully.",
-      });
+      toast.success("The market has been created successfully.");
       
       return createdMarket;
     }
@@ -671,18 +617,11 @@ export async function rejectMarketRequest(requestId: string, reason: string) {
       .eq("id", requestId);
     
     if (error) {
-      toast({
-        title: "Error rejecting market request",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error rejecting market request: " + error.message);
       return false;
     }
     
-    toast({
-      title: "Market request rejected",
-      description: "The market request has been rejected.",
-    });
+    toast.success("The market request has been rejected.");
     
     return true;
   } catch (error) {
