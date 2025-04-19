@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,9 +33,14 @@ const Navbar = () => {
               How It Works
             </Link>
             {user && (
-              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
-                Dashboard
-              </Link>
+              <>
+                <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
+                  Dashboard
+                </Link>
+                <Link to="/redeem" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
+                  Redeem
+                </Link>
+              </>
             )}
           </nav>
         </div>
@@ -96,13 +100,22 @@ const Navbar = () => {
               How It Works
             </Link>
             {user && (
-              <Link 
-                to="/dashboard" 
-                className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/redeem" 
+                  className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Redeem
+                </Link>
+              </>
             )}
             
             <div className="border-t my-2"></div>

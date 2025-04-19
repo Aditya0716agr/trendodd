@@ -240,6 +240,41 @@ export type Database = {
         }
         Relationships: []
       }
+      redemptions: {
+        Row: {
+          coins_spent: number
+          id: string
+          redeemed_at: string
+          status: string
+          user_id: string
+          voucher_id: string
+        }
+        Insert: {
+          coins_spent: number
+          id?: string
+          redeemed_at?: string
+          status?: string
+          user_id: string
+          voucher_id: string
+        }
+        Update: {
+          coins_spent?: number
+          id?: string
+          redeemed_at?: string
+          status?: string
+          user_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -286,6 +321,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vouchers: {
+        Row: {
+          available_quantity: number
+          brand_name: string
+          coin_cost: number
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+        }
+        Insert: {
+          available_quantity?: number
+          brand_name: string
+          coin_cost: number
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+        }
+        Update: {
+          available_quantity?: number
+          brand_name?: string
+          coin_cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
