@@ -74,10 +74,10 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
           <BrowserRouter>
             <AppRoutes />
+            <Toaster />
+            <Sonner />
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

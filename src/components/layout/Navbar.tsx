@@ -18,7 +18,11 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   const navItems = [
@@ -40,7 +44,7 @@ const Navbar = () => {
           <NavbarBranding />
           
           <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item, index) => (
+            {navItems.map((item) => (
               <Link 
                 key={item.path}
                 to={item.path} 
@@ -52,7 +56,7 @@ const Navbar = () => {
             
             {user && (
               <>
-                {authenticatedNavItems.map((item, index) => (
+                {authenticatedNavItems.map((item) => (
                   <Link 
                     key={item.path}
                     to={item.path} 
@@ -102,7 +106,7 @@ const Navbar = () => {
             )}
           </div>
           
-          <button className="md:hidden" onClick={toggleMenu}>
+          <button className="md:hidden" onClick={toggleMenu} aria-label="Toggle menu">
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
@@ -118,7 +122,7 @@ const Navbar = () => {
           transition={{ duration: 0.3 }}
         >
           <div className="container py-4 flex flex-col gap-4">
-            {navItems.map((item, index) => (
+            {navItems.map((item) => (
               <Link 
                 key={item.path}
                 to={item.path} 
@@ -131,7 +135,7 @@ const Navbar = () => {
             
             {user && (
               <>
-                {authenticatedNavItems.map((item, index) => (
+                {authenticatedNavItems.map((item) => (
                   <Link 
                     key={item.path}
                     to={item.path} 
