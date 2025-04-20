@@ -39,44 +39,40 @@ const Redeem = () => {
   const fetchVouchers = async () => {
     try {
       setIsLoading(true);
-      console.log("Fetching vouchers...");
-
+      console.log("📡 Fetching vouchers...");
+  
       const { data, error } = await supabase
         .from("vouchers")
         .select("*")
         .gt("available_quantity", 0)
         .order("coin_cost", { ascending: true });
-
+        if (error) {
+          console.error("Error fetching vouchers:", error);
+        } else {
+          console.log("Fetched vouchers:", data);
+        }
+  
+      console.log("✅ Supabase response data:", data);
+      console.log("❌ Supabase error (if any):", error);
+  
       if (error) {
-        console.error("Error fetching vouchers:", error);
-        throw error;
+        toast.error("Error fetching vouchers: " + error.message);
+        return;
       }
-      
-      console.log("Vouchers fetched:", data);
-
+  
       if (!data || data.length === 0) {
-        // Create some sample vouchers if none exist
-        await createSampleVouchers();
-        const { data: sampleData, error: sampleError } = await supabase
-          .from("vouchers")
-          .select("*")
-          .order("coin_cost", { ascending: true });
-          
-        if (sampleError) throw sampleError;
-        setVouchers(sampleData || []);
-        
-        console.log("Sample vouchers created:", sampleData);
-      } else {
-        setVouchers(data);
+        toast.warning("No vouchers found with quantity > 0.");
       }
-    } catch (error) {
-      console.error("Error in fetchVouchers:", error);
+  
+      setVouchers(data ?? []);
+    } catch (error: any) {
+      console.error("🔥 Error in fetchVouchers:", error);
       toast.error("Failed to load vouchers. Please refresh the page.");
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const createSampleVouchers = async () => {
     try {
       const sampleVouchers = [
@@ -209,6 +205,7 @@ const Redeem = () => {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1 }
   };
+console.log("🖼️ Rendering with vouchers:", vouchers);
 
   return (
     <Layout>
