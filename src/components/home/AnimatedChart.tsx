@@ -1,33 +1,36 @@
-
-import { useEffect, useRef, useState } from 'react';
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useEffect, useState } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const generateData = () => {
   const numberOfDays = 30;
   const data = [];
-  
-  // Starting price between 30 and 70
+
   let yesPrice = Math.random() * 40 + 30;
-  
+
   for (let i = 0; i < numberOfDays; i++) {
-    // Random price movement between -5 and +5
     const volatility = 5;
     const change = (Math.random() * volatility * 2) - volatility;
-    
-    // Make sure price stays between 1 and 99
+
     yesPrice = Math.max(1, Math.min(99, yesPrice + change));
     const noPrice = 100 - yesPrice;
-    
+
     const date = new Date();
     date.setDate(date.getDate() - (numberOfDays - i));
-    
+
     data.push({
       date: date.toLocaleDateString(),
       yes: Math.round(yesPrice),
-      no: Math.round(noPrice)
+      no: Math.round(noPrice),
     });
   }
-  
+
   return data;
 };
 
@@ -35,87 +38,81 @@ interface AnimatedChartProps {
   className?: string;
 }
 
-const AnimatedChart = ({ className = "" }: AnimatedChartProps) => {
+const AnimatedChart = ({ className = '' }: AnimatedChartProps) => {
   const [chartData, setChartData] = useState(generateData());
-  
-  // Periodically update chart data for animation effect
+
   useEffect(() => {
     const interval = setInterval(() => {
-      const data = [...chartData];
-      const lastPoint = data[data.length - 1];
-      
-      // Create new point with slight variation
-      const volatility = 3;
-      const change = (Math.random() * volatility * 2) - volatility;
-      let newYesPrice = Math.round(Math.max(1, Math.min(99, lastPoint.yes + change)));
-      const newNoPrice = 100 - newYesPrice;
-      
-      // Add new date
-      const newDate = new Date();
-      
-      // Remove first point and add new point
-      data.shift();
-      data.push({
-        date: newDate.toLocaleDateString(),
-        yes: newYesPrice,
-        no: newNoPrice
+      setChartData(prevData => {
+        const newData = [...prevData];
+        const lastPoint = newData[newData.length - 1];
+
+        const volatility = 3;
+        const change = (Math.random() * volatility * 2) - volatility;
+        const newYesPrice = Math.round(Math.max(1, Math.min(99, lastPoint.yes + change)));
+        const newNoPrice = 100 - newYesPrice;
+        const newDate = new Date();
+
+        newData.shift(); // remove first
+        newData.push({
+          date: newDate.toLocaleDateString(),
+          yes: newYesPrice,
+          no: newNoPrice,
+        });
+
+        return newData;
       });
-      
-      setChartData(data);
     }, 2000);
-    
+
     return () => clearInterval(interval);
-  }, [chartData]);
-  
+  }, []);
+
   return (
     <div className={`w-full ${className}`}>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
-          <XAxis 
-            dataKey="date" 
-            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12, fill: '#ccc' }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => {
-              if (chartData.length <= 10) return value;
-              // Show only some dates to avoid overcrowding
-              const idx = chartData.findIndex(item => item.date === value);
-              return idx % 5 === 0 ? value : '';
-            }}
+            tickFormatter={(value, index) =>
+              chartData.length <= 10 || index % 5 === 0 ? value : ''
+            }
           />
-          <YAxis 
-            domain={[0, 100]} 
-            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
+          <YAxis
+            domain={[0, 100]}
+            tick={{ fontSize: 12, fill: '#ccc' }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `${value}¢`}
           />
-          <Tooltip 
+          <Tooltip
             formatter={(value) => [`${value}¢`, undefined]}
-            contentStyle={{ 
-              backgroundColor: 'var(--card)',
-              borderColor: 'var(--border)',
-              borderRadius: 'var(--radius)',
+            contentStyle={{
+              backgroundColor: '#111',
+              borderColor: '#444',
+              borderRadius: '6px',
             }}
             labelStyle={{ fontWeight: 'bold' }}
           />
-          <Line 
-            type="monotone" 
-            dataKey="yes" 
-            stroke="var(--market-yes)" 
+          <Line
+            type="monotone"
+            dataKey="yes"
+            stroke="#00C49F"
             strokeWidth={2}
             dot={false}
-            animationDuration={1500}
-            animationEasing="ease-in-out"
+            animationDuration={1000}
+            isAnimationActive={true}
           />
-          <Line 
-            type="monotone" 
-            dataKey="no" 
-            stroke="var(--market-no)" 
+          <Line
+            type="monotone"
+            dataKey="no"
+            stroke="#FF8042"
             strokeWidth={2}
             dot={false}
-            animationDuration={1500}
-            animationEasing="ease-in-out"
+            animationDuration={1000}
+            isAnimationActive={true}
           />
         </LineChart>
       </ResponsiveContainer>

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +36,10 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    --market-yes: 144 62% 65%; /* green */
+    --market-no: 0 84% 70%;    /* red */
+
   }
 
   .dark {
