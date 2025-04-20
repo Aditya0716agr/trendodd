@@ -548,7 +548,7 @@ export async function getPendingMarketRequests() {
       return [];
     }
     
-    return data;
+    return data || [];
   } catch (error) {
     console.error("Error in getPendingMarketRequests:", error);
     return [];

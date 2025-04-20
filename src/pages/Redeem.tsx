@@ -38,24 +38,78 @@ const Redeem = () => {
 
   const fetchVouchers = async () => {
     try {
+      setIsLoading(true);
+      console.log("Fetching vouchers...");
+
       const { data, error } = await supabase
         .from("vouchers")
         .select("*")
         .gt("available_quantity", 0)
         .order("coin_cost", { ascending: true });
 
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        toast.error("No vouchers available at the moment. Please check back later.");
+      if (error) {
+        console.error("Error fetching vouchers:", error);
+        throw error;
       }
       
-      setVouchers(data || []);
+      console.log("Vouchers fetched:", data);
+
+      if (!data || data.length === 0) {
+        // Create some sample vouchers if none exist
+        await createSampleVouchers();
+        const { data: sampleData, error: sampleError } = await supabase
+          .from("vouchers")
+          .select("*")
+          .order("coin_cost", { ascending: true });
+          
+        if (sampleError) throw sampleError;
+        setVouchers(sampleData || []);
+        
+        console.log("Sample vouchers created:", sampleData);
+      } else {
+        setVouchers(data);
+      }
     } catch (error) {
-      console.error("Error fetching vouchers:", error);
+      console.error("Error in fetchVouchers:", error);
       toast.error("Failed to load vouchers. Please refresh the page.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createSampleVouchers = async () => {
+    try {
+      const sampleVouchers = [
+        {
+          brand_name: "Amazon",
+          description: "$10 Amazon Gift Card",
+          image_url: "https://logos-world.net/wp-content/uploads/2020/04/Amazon-Logo.png",
+          coin_cost: 500,
+          available_quantity: 10
+        },
+        {
+          brand_name: "Netflix",
+          description: "1 Month Netflix Standard Subscription",
+          image_url: "https://www.logo.wine/a/logo/Netflix/Netflix-Logo.wine.svg",
+          coin_cost: 800,
+          available_quantity: 5
+        },
+        {
+          brand_name: "Starbucks",
+          description: "$5 Starbucks Gift Card",
+          image_url: "https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/800px-Starbucks_Corporation_Logo_2011.svg.png",
+          coin_cost: 300,
+          available_quantity: 15
+        }
+      ];
+      
+      for (const voucher of sampleVouchers) {
+        await supabase.from("vouchers").insert(voucher);
+      }
+      
+      console.log("Sample vouchers created");
+    } catch (error) {
+      console.error("Error creating sample vouchers:", error);
     }
   };
 
@@ -200,9 +254,9 @@ const Redeem = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="h-32 bg-muted"></CardHeader>
-                <CardContent className="space-y-2">
+              <Card key={i} className="animate-pulse voucher-card">
+                <div className="h-32 bg-muted"></div>
+                <CardContent className="space-y-2 pt-6">
                   <div className="h-4 w-3/4 bg-muted rounded"></div>
                   <div className="h-4 w-1/2 bg-muted rounded"></div>
                 </CardContent>
@@ -239,9 +293,9 @@ const Redeem = () => {
           >
             {vouchers.map((voucher) => (
               <motion.div key={voucher.id} variants={item}>
-                <Card className="overflow-hidden group hover:shadow-lg transition-shadow h-full flex flex-col">
-                  <CardHeader>
-                    <div className="relative h-32 flex items-center justify-center bg-background">
+                <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 h-full flex flex-col voucher-card">
+                  <CardHeader className="p-0">
+                    <div className="voucher-card-image">
                       {voucher.image_url ? (
                         <motion.img
                           src={voucher.image_url}
@@ -256,10 +310,12 @@ const Redeem = () => {
                         </div>
                       )}
                     </div>
-                    <CardTitle className="mt-4">{voucher.brand_name}</CardTitle>
-                    <CardDescription>{voucher.description}</CardDescription>
+                    <div className="px-5 pt-5">
+                      <CardTitle className="mt-4 text-xl">{voucher.brand_name}</CardTitle>
+                      <CardDescription>{voucher.description}</CardDescription>
+                    </div>
                   </CardHeader>
-                  <CardContent className="flex-grow">
+                  <CardContent className="flex-grow p-5 pb-0">
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-muted-foreground">
                         {voucher.available_quantity} remaining
@@ -269,9 +325,9 @@ const Redeem = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="p-5">
                     <Button 
-                      className="w-full group-hover:bg-primary transition-colors"
+                      className="w-full group-hover:bg-primary transition-colors btn-glow"
                       onClick={() => handleRedeem(voucher)}
                       disabled={isRedeeming || !user}
                     >

@@ -13,6 +13,7 @@ import { getPendingMarketRequests, upvoteMarketRequest } from "@/services/market
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThumbsUp, Clock, Search, Calendar } from "lucide-react";
+import { MarketCategory } from "@/types/market";
 
 interface MarketRequest {
   id: string;
@@ -22,12 +23,11 @@ interface MarketRequest {
   close_date: string;
   requested_by: string;
   created_at: string;
-  // Map upvotes_count to upvotes to match the interface
   upvotes: number;
-  has_upvoted?: boolean;
+  has_upvoted: boolean;
   profiles?: {
     username?: string;
-  }
+  } | any; // Allow any type for profiles to handle SelectQueryError
 }
 
 const MarketRequests = () => {
@@ -87,8 +87,8 @@ const MarketRequests = () => {
         close_date: item.close_date,
         requested_by: item.requested_by,
         created_at: item.created_at,
-        upvotes: item.upvotes_count,
-        has_upvoted: item.has_user_upvoted,
+        upvotes: item.upvotes_count || 0,
+        has_upvoted: item.has_user_upvoted || false,
         profiles: item.profiles
       }));
       
@@ -268,7 +268,11 @@ const MarketRequests = () => {
                       <div className="flex items-center text-sm">
                         <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                         <span className="text-muted-foreground">
-                          Requested on {formatDate(request.created_at)} by {request.profiles?.username || "Anonymous"}
+                          Requested on {formatDate(request.created_at)} by {
+                            request.profiles && typeof request.profiles === 'object' && 'username' in request.profiles 
+                              ? request.profiles.username 
+                              : 'Anonymous'
+                          }
                         </span>
                       </div>
                       <Button 
