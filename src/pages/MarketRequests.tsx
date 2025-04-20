@@ -22,6 +22,7 @@ interface MarketRequest {
   close_date: string;
   requested_by: string;
   created_at: string;
+  // Map upvotes_count to upvotes to match the interface
   upvotes: number;
   has_upvoted?: boolean;
   profiles?: {
@@ -77,7 +78,21 @@ const MarketRequests = () => {
     setIsLoading(true);
     try {
       const data = await getPendingMarketRequests();
-      setMarketRequests(data);
+      // Transform the data to match the MarketRequest interface
+      const transformedData: MarketRequest[] = data.map(item => ({
+        id: item.id,
+        question: item.question,
+        description: item.description,
+        category: item.category,
+        close_date: item.close_date,
+        requested_by: item.requested_by,
+        created_at: item.created_at,
+        upvotes: item.upvotes_count,
+        has_upvoted: item.has_user_upvoted,
+        profiles: item.profiles
+      }));
+      
+      setMarketRequests(transformedData);
     } catch (error) {
       console.error("Error fetching market requests:", error);
       toast.error("Failed to load market requests");

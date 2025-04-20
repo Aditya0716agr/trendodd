@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 const Navbar = () => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -38,6 +39,10 @@ const Navbar = () => {
     { path: "/redeem", label: "Redeem" },
   ];
 
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
@@ -49,7 +54,9 @@ const Navbar = () => {
               <Link 
                 key={item.path}
                 to={item.path} 
-                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300"
+                className={`text-sm font-medium transition-colors hover:scale-105 transform duration-300 ${
+                  isActive(item.path) ? "text-primary font-semibold" : "hover:text-primary"
+                }`}
               >
                 {item.label}
               </Link>
@@ -61,7 +68,9 @@ const Navbar = () => {
                   <Link 
                     key={item.path}
                     to={item.path} 
-                    className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300"
+                    className={`text-sm font-medium transition-colors hover:scale-105 transform duration-300 ${
+                      isActive(item.path) ? "text-primary font-semibold" : "hover:text-primary"
+                    }`}
                   >
                     {item.label}
                   </Link>
@@ -127,7 +136,9 @@ const Navbar = () => {
               <Link 
                 key={item.path}
                 to={item.path} 
-                className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                className={`px-2 py-2 rounded-md transition-colors ${
+                  isActive(item.path) ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -140,7 +151,9 @@ const Navbar = () => {
                   <Link 
                     key={item.path}
                     to={item.path} 
-                    className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                    className={`px-2 py-2 rounded-md transition-colors ${
+                      isActive(item.path) ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                    }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.label}
