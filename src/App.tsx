@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import HowItWorks from "./pages/HowItWorks";
 import RequestMarket from "./pages/RequestMarket";
 import NotFound from "./pages/NotFound";
 import Redeem from "./pages/Redeem";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +63,7 @@ const AppRoutes = () => {
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/request-market" element={<RequestMarket />} />
       <Route path="/redeem" element={<Redeem />} />
+      <Route path="/blog" element={<Blog />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -1,11 +1,13 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Coins } from "lucide-react";
 import NavbarBranding from "./NavbarBranding";
 import { signOut } from "@/services/auth";
+import { motion } from "framer-motion";
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -19,6 +21,18 @@ const Navbar = () => {
     await signOut();
   };
 
+  const navItems = [
+    { path: "/markets", label: "Markets" },
+    { path: "/how-it-works", label: "How It Works" },
+    { path: "/blog", label: "Blog" },
+    { path: "/request-market", label: "Request Idea" },
+  ];
+
+  const authenticatedNavItems = [
+    { path: "/dashboard", label: "Dashboard" },
+    { path: "/redeem", label: "Redeem" },
+  ];
+
   return (
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
@@ -26,20 +40,27 @@ const Navbar = () => {
           <NavbarBranding />
           
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/markets" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
-              Markets
-            </Link>
-            <Link to="/how-it-works" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
-              How It Works
-            </Link>
+            {navItems.map((item, index) => (
+              <Link 
+                key={item.path}
+                to={item.path} 
+                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300"
+              >
+                {item.label}
+              </Link>
+            ))}
+            
             {user && (
               <>
-                <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
-                  Dashboard
-                </Link>
-                <Link to="/redeem" className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300">
-                  Redeem
-                </Link>
+                {authenticatedNavItems.map((item, index) => (
+                  <Link 
+                    key={item.path}
+                    to={item.path} 
+                    className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-300"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </>
             )}
           </nav>
@@ -51,12 +72,18 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>
-                <div className="flex items-center mr-2">
-                  <div className="text-sm font-medium">{user.email}</div>
-                  <div className="ml-2 px-2 py-1 bg-primary/10 rounded-md text-xs font-medium animate-pulse">
-                    {user.user_metadata?.wallet_balance || 1000} coins
+                <motion.div 
+                  className="flex items-center mr-2 bg-primary/10 px-3 py-1.5 rounded-full"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <span className="text-sm font-medium mr-2 text-foreground">{user.email}</span>
+                  <div className="flex items-center gap-1 text-primary">
+                    <Coins className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">
+                      {user.user_metadata?.wallet_balance || 1000}
+                    </span>
                   </div>
-                </div>
+                </motion.div>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
@@ -83,38 +110,37 @@ const Navbar = () => {
       
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t">
+        <motion.div 
+          className="md:hidden border-t"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="container py-4 flex flex-col gap-4">
-            <Link 
-              to="/markets" 
-              className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Markets
-            </Link>
-            <Link 
-              to="/how-it-works" 
-              className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              How It Works
-            </Link>
+            {navItems.map((item, index) => (
+              <Link 
+                key={item.path}
+                to={item.path} 
+                className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            
             {user && (
               <>
-                <Link 
-                  to="/dashboard" 
-                  className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link 
-                  to="/redeem" 
-                  className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Redeem
-                </Link>
+                {authenticatedNavItems.map((item, index) => (
+                  <Link 
+                    key={item.path}
+                    to={item.path} 
+                    className="px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </>
             )}
             
@@ -124,8 +150,11 @@ const Navbar = () => {
               <>
                 <div className="px-2 py-2">
                   <div className="font-medium">{user.email}</div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    Balance: {user.user_metadata?.wallet_balance || 1000} coins
+                  <div className="flex items-center gap-1 mt-1 text-primary">
+                    <Coins className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      {user.user_metadata?.wallet_balance || 1000} coins
+                    </span>
                   </div>
                 </div>
                 <Button variant="ghost" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
@@ -143,7 +172,7 @@ const Navbar = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
     </header>
   );

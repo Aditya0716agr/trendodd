@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
+import { Coins, Gift, ArrowLeft } from "lucide-react";
 
 interface Voucher {
   id: string;
@@ -23,6 +25,7 @@ const Redeem = () => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -42,10 +45,15 @@ const Redeem = () => {
         .order("coin_cost", { ascending: true });
 
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        toast.error("No vouchers available at the moment. Please check back later.");
+      }
+      
       setVouchers(data || []);
     } catch (error) {
       console.error("Error fetching vouchers:", error);
-      toast.error("Failed to load vouchers");
+      toast.error("Failed to load vouchers. Please refresh the page.");
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +66,8 @@ const Redeem = () => {
     }
 
     setIsRedeeming(true);
+    setSelectedVoucher(voucher.id);
+    
     try {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -69,6 +79,20 @@ const Redeem = () => {
 
       if (profile.wallet_balance < voucher.coin_cost) {
         toast.error("Insufficient coins balance");
+        return;
+      }
+
+      const { error: voucherCheckError, data: voucherCheck } = await supabase
+        .from("vouchers")
+        .select("available_quantity")
+        .eq("id", voucher.id)
+        .single();
+        
+      if (voucherCheckError) throw voucherCheckError;
+      
+      if (voucherCheck.available_quantity <= 0) {
+        toast.error("This voucher is no longer available");
+        fetchVouchers(); // Refresh vouchers list
         return;
       }
 
@@ -110,19 +134,68 @@ const Redeem = () => {
 
     } catch (error) {
       console.error("Error redeeming voucher:", error);
-      toast.error("Failed to redeem voucher");
+      toast.error("Failed to redeem voucher. Please try again.");
     } finally {
       setIsRedeeming(false);
+      setSelectedVoucher(null);
     }
+  };
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
   };
 
   return (
     <Layout>
       <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-2">Redeem Your Coins</h1>
-        <p className="text-muted-foreground mb-8">
-          Exchange your earned coins for exciting rewards and gift cards
-        </p>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-6 hover:scale-105 transition-transform" 
+          onClick={() => navigate("/dashboard")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center text-center mb-8"
+        >
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 shine">
+            <Gift className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold mb-2">Redeem Your Coins</h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Exchange your earned coins for exciting rewards and gift cards. The more you predict correctly, the more coins you earn!
+          </p>
+          {user && (
+            <motion.div 
+              className="mt-4 px-4 py-2 bg-primary/10 rounded-lg flex items-center gap-2"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Coins className="h-5 w-5 text-primary" />
+              <span className="font-medium">
+                Your Balance: <span className="text-primary animate-pulse-light">{user.user_metadata?.wallet_balance || 1000} coins</span>
+              </span>
+            </motion.div>
+          )}
+        </motion.div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -136,47 +209,89 @@ const Redeem = () => {
               </Card>
             ))}
           </div>
+        ) : vouchers.length === 0 ? (
+          <motion.div 
+            className="text-center py-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Gift className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-medium mb-2">No Vouchers Available</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              We're currently restocking our rewards. Please check back later for exciting new vouchers!
+            </p>
+            <Button 
+              className="mt-6" 
+              onClick={fetchVouchers}
+            >
+              Refresh
+            </Button>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={container}
+            initial="hidden"
+            animate="show"
+          >
             {vouchers.map((voucher) => (
-              <Card key={voucher.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="relative h-32 flex items-center justify-center bg-background">
-                    {voucher.image_url ? (
-                      <img
-                        src={voucher.image_url}
-                        alt={voucher.brand_name}
-                        className="h-16 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="h-16 w-16 bg-muted rounded-full"></div>
-                    )}
-                  </div>
-                  <CardTitle className="mt-4">{voucher.brand_name}</CardTitle>
-                  <CardDescription>{voucher.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-muted-foreground">
-                      {voucher.available_quantity} remaining
+              <motion.div key={voucher.id} variants={item}>
+                <Card className="overflow-hidden group hover:shadow-lg transition-shadow h-full flex flex-col">
+                  <CardHeader>
+                    <div className="relative h-32 flex items-center justify-center bg-background">
+                      {voucher.image_url ? (
+                        <motion.img
+                          src={voucher.image_url}
+                          alt={voucher.brand_name}
+                          className="h-16 w-auto object-contain"
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                      ) : (
+                        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center">
+                          <Gift className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
-                    <div className="font-semibold text-primary">
-                      {voucher.coin_cost} coins
+                    <CardTitle className="mt-4">{voucher.brand_name}</CardTitle>
+                    <CardDescription>{voucher.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-muted-foreground">
+                        {voucher.available_quantity} remaining
+                      </div>
+                      <div className="font-semibold text-primary">
+                        {voucher.coin_cost} coins
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleRedeem(voucher)}
-                    disabled={isRedeeming}
-                  >
-                    {isRedeeming ? "Redeeming..." : "Redeem Now"}
-                  </Button>
-                </CardFooter>
-              </Card>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      className="w-full group-hover:bg-primary transition-colors"
+                      onClick={() => handleRedeem(voucher)}
+                      disabled={isRedeeming || !user}
+                    >
+                      {isRedeeming && selectedVoucher === voucher.id ? (
+                        <span className="flex items-center gap-2">
+                          <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                          Processing...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <Coins className="h-4 w-4" />
+                          Redeem Now
+                        </span>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </Layout>
