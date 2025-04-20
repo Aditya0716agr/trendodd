@@ -11,6 +11,7 @@ import { getMarkets } from "@/services/market";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const marketCategories = [
   { id: "crypto", name: "Crypto" },
@@ -39,8 +40,10 @@ const Markets = () => {
         const marketData = await getMarkets();
         // Add type assertion to fix the type error
         setMarkets(marketData as Market[]);
+        toast.success("Markets loaded successfully");
       } catch (error) {
         console.error("Error fetching markets:", error);
+        toast.error("Error loading markets. Please refresh and try again.");
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +116,7 @@ const Markets = () => {
 
   const MarketCard = ({ market }: { market: Market }) => (
     <Link to={`/market/${market.id}`} key={market.id} className="block hover:no-underline">
-      <div className="market-card flex flex-col md:flex-row md:items-center animate-fade-in">
+      <div className="market-card bg-card border rounded-lg p-5 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center animate-fade-in">
         <div className="flex-grow mb-4 md:mb-0 md:mr-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
@@ -154,7 +157,7 @@ const Markets = () => {
   );
 
   const MarketSkeleton = () => (
-    <div className="market-card animate-pulse">
+    <div className="market-card border rounded-lg p-5 animate-pulse">
       <div className="flex flex-col md:flex-row md:items-center">
         <div className="flex-grow mb-4 md:mb-0 md:mr-4">
           <div className="flex items-center gap-2 mb-2">

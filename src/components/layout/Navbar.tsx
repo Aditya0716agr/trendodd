@@ -27,6 +27,7 @@ const Navbar = () => {
 
   const navItems = [
     { path: "/markets", label: "Markets" },
+    { path: "/market-requests", label: "Market Requests" },
     { path: "/how-it-works", label: "How It Works" },
     { path: "/blog", label: "Blog" },
     { path: "/request-market", label: "Request Idea" },
