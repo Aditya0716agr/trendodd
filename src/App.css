@@ -5,25 +5,32 @@
   text-align: center;
 }
 
-/* Coin animation */
-@keyframes coin-flip {
-  0% {
-    transform: rotateY(0);
-  }
-  50% {
-    transform: rotateY(180deg);
-  }
-  100% {
-    transform: rotateY(360deg);
-  }
+/* Premium effects */
+.premium-shadow {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-.coin-flip {
-  animation: coin-flip 2s ease-in-out infinite;
-  transform-style: preserve-3d;
+.premium-shadow:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-@keyframes coin-bounce {
+.premium-card {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Elegant animations */
+@keyframes float {
   0%, 100% {
     transform: translateY(0);
   }
@@ -32,8 +39,171 @@
   }
 }
 
-.coin-bounce {
-  animation: coin-bounce 1.5s ease-in-out infinite;
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-elegant {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.pulse-elegant {
+  animation: pulse-elegant 2s ease-in-out infinite;
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #d946ef);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Premium coin styles */
+.premium-coin {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ffd700, #ffcc00);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.premium-coin::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  background: linear-gradient(135deg, #ffd700, #ffcc00);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.premium-coin:hover {
+  transform: translateY(-5px) rotate(5deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.premium-coin-icon {
+  color: #fff;
+  position: relative;
+  z-index: 2;
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.premium-coin-shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% {
+    transform: rotate(45deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(45deg) translateX(100%);
+  }
+}
+
+/* Premium brand showcase */
+.premium-brand {
+  position: relative;
+  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.premium-brand:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.premium-brand-logo {
+  height: 40px;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.premium-brand-title {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.premium-brand-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Refined animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+@keyframes pulse-light {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-light {
+  animation: pulse-light 2s infinite;
 }
 
 /* Keep necessary animations */
@@ -52,52 +222,41 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.float {
-  animation: float 3s ease-in-out infinite;
-}
-
 /* 3D Transform */
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
 
-/* Shine effect animation */
-@keyframes shine-effect {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 200%;
-  }
+/* Card styles */
+.market-request-card {
+  @apply bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300;
 }
 
-.shine-effect {
-  position: relative;
-  overflow: hidden;
+.market-request-badge {
+  @apply px-2 py-1 rounded text-xs font-medium;
 }
 
-.shine-effect::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 80%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  animation: shine-effect 2s infinite;
+.market-request-badge-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.market-request-badge-approved {
+  @apply bg-green-100 text-green-800;
+}
+
+.market-request-badge-rejected {
+  @apply bg-red-100 text-red-800;
+}
+
+/* Enhanced upvote button */
+.upvote-button {
+  @apply flex items-center gap-1 text-sm font-medium rounded-full px-3 py-1.5 transition-all duration-300;
+}
+
+.upvote-button-active {
+  @apply bg-primary/20 text-primary;
+}
+
+.upvote-button-inactive {
+  @apply hover:bg-primary/10 bg-secondary;
 }

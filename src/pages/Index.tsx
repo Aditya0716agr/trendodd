@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Award, Coins, Gift, LineChart, Star, TrendingUp } from "lucide-react";
@@ -23,29 +22,12 @@ const Index = () => {
     show: { opacity: 1, y: 0 }
   };
 
-  const coinContainer = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1, 
-      transition: { 
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const coinItem = {
-    hidden: { scale: 0, rotate: -180 },
-    show: { 
-      scale: 1, 
-      rotate: 0,
-      transition: { 
-        type: "spring",
-        stiffness: 260,
-        damping: 20
-      }
-    }
-  };
+  const brandPartners = [
+    { name: "Amazon", icon: "gift", color: "#ff9900", discount: "10% off" },
+    { name: "Netflix", icon: "tv", color: "#e50914", discount: "1 month free" },
+    { name: "Spotify", icon: "music", color: "#1db954", discount: "3 months premium" },
+    { name: "Apple", icon: "gift", color: "#555555", discount: "Gift cards" }
+  ];
 
   return (
     <Layout>
@@ -62,7 +44,7 @@ const Index = () => {
               <Logo size="lg" animate={true} />
             </motion.div>
             
-            <motion.h1 variants={item} className="text-4xl md:text-6xl font-bold mb-6">
+            <motion.h1 variants={item} className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Predict the Future. <span className="text-primary">Trade</span> the Odds.
             </motion.h1>
             
@@ -72,37 +54,42 @@ const Index = () => {
             
             <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4">
               <Link to="/markets">
-                <Button size="lg" className="w-full sm:w-auto gap-2 hover:scale-105 transition duration-300">
+                <Button size="lg" className="w-full sm:w-auto gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
                   Explore Markets
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto hover:scale-105 transition duration-300">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto hover:scale-105 transition-all duration-300 border-primary/50 hover:bg-primary/5">
                   Create Free Account
                 </Button>
               </Link>
             </motion.div>
 
-            {/* Animated Coins */}
+            {/* Premium Coin Display */}
             <motion.div 
-              className="mt-12 flex justify-center gap-4"
-              variants={coinContainer}
-              initial="hidden"
-              animate="show"
+              className="mt-12 grid grid-cols-3 sm:grid-cols-5 gap-4 max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
             >
-              {[1, 2, 3, 4, 5].map((coin, index) => (
+              {[5000, 10000, 25000, 50000, 100000].map((value, index) => (
                 <motion.div
                   key={index}
-                  className="relative"
-                  variants={coinItem}
-                  custom={index}
+                  className={`premium-coin ${index % 2 === 0 ? 'animate-float' : ''}`}
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 260, 
+                    damping: 20,
+                    delay: 0.6 + (index * 0.1)
+                  }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg transform hover:rotate-y-180 transition-all duration-500">
-                    <Coins className="h-8 w-8 text-yellow-800" />
-                  </div>
-                  <div className="absolute -bottom-2 left-0 right-0 text-center text-sm font-bold text-primary">
-                    {[200, 500, 1000, 2000, 5000][index]}
+                  <Coins className="h-6 w-6 text-yellow-800" />
+                  <div className="premium-coin-shine"></div>
+                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm font-bold text-primary whitespace-nowrap">
+                    {value.toLocaleString()}
                   </div>
                 </motion.div>
               ))}
@@ -115,10 +102,10 @@ const Index = () => {
       <section className="py-16 px-4 bg-card/50">
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-8 animate-fade-in">
-            <h2 className="text-3xl font-bold mb-3">Live Market Simulation</h2>
+            <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">Live Market Simulation</h2>
             <p className="text-muted-foreground">Watch how prediction markets move in real-time</p>
           </div>
-          <div className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition duration-300 animate-fade-in">
+          <div className="bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium">Demo Market</span>
@@ -132,7 +119,7 @@ const Index = () => {
             <AnimatedChart className="mt-6" />
             <div className="flex justify-center mt-6">
               <Link to="/markets">
-                <Button className="gap-2 hover:scale-105 transition duration-300">
+                <Button className="gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
                   Trade Real Markets
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -186,8 +173,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Redeem Rewards Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 to-secondary/5">
+      {/* Premium Redeem Rewards Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 to-indigo-600/5">
         <div className="container mx-auto max-w-5xl">
           <motion.div 
             className="text-center mb-12"
@@ -196,11 +183,39 @@ const Index = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl font-bold mb-4">Redeem Your Winnings</h2>
+            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Premium Rewards Program</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Turn your prediction skills into real-world rewards with our premium brand partners.
+              Turn your prediction skills into real-world rewards with our exclusive premium brand partners.
             </p>
           </motion.div>
+
+          {/* Premium Brands Section */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+            {brandPartners.map((brand, index) => (
+              <motion.div 
+                key={index}
+                className="premium-brand-card"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+              >
+                <div 
+                  className="w-12 h-12 rounded-full mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: `${brand.color}20` }}
+                >
+                  <Gift className="h-6 w-6" style={{ color: brand.color }} />
+                </div>
+                <h3 className="text-lg font-bold mb-1">{brand.name}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Redeem for exclusive {brand.name} rewards and offers
+                </p>
+                <div className="bg-primary/10 text-primary text-xs font-semibold rounded-full px-3 py-1 inline-block">
+                  {brand.discount}
+                </div>
+              </motion.div>
+            ))}
+          </div>
 
           <motion.div 
             className="grid md:grid-cols-3 gap-8"
@@ -211,7 +226,7 @@ const Index = () => {
           >
             <motion.div 
               variants={item}
-              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              className="premium-card bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
             >
               <div className="h-36 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
                 <Gift className="h-16 w-16 text-white" />
@@ -234,7 +249,7 @@ const Index = () => {
 
             <motion.div 
               variants={item}
-              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              className="premium-card bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
             >
               <div className="h-36 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
                 <Award className="h-16 w-16 text-white" />
@@ -258,7 +273,7 @@ const Index = () => {
 
             <motion.div 
               variants={item}
-              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              className="premium-card bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
             >
               <div className="h-36 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
                 <Coins className="h-16 w-16 text-white" />
@@ -284,7 +299,7 @@ const Index = () => {
 
           <div className="text-center mt-10">
             <Link to="/redeem">
-              <Button className="gap-2 hover:scale-105 transition-all duration-300">
+              <Button className="gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
                 Explore Rewards
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -370,7 +385,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-primary text-primary-foreground">
+      <section className="py-16 px-4 bg-gradient-to-r from-primary to-indigo-600 text-primary-foreground">
         <div className="container mx-auto max-w-5xl text-center animate-fade-in">
           <div className="flex justify-center mb-6">
             <motion.div 
@@ -392,7 +407,7 @@ const Index = () => {
             Sign up today and receive 10,000 virtual coins to start trading on prediction markets.
           </p>
           <Link to="/register">
-            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 hover:scale-105 transition-all duration-300">
+            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-lg">
               Create Free Account
             </Button>
           </Link>

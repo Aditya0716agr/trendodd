@@ -24,7 +24,7 @@ const MarketRequests = () => {
         
         const { data, error } = await supabase
           .from('market_requests_with_votes')
-          .select('*, profiles:requested_by(*)')
+          .select('*, profiles:requested_by(username)')
           .order('created_at', { ascending: false });
           
         if (error) {
@@ -180,14 +180,14 @@ const MarketRequests = () => {
       <div className="container py-8 md:py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Market Requests</h1>
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">Market Requests</h1>
             <p className="text-muted-foreground">
               Browse and upvote community-requested prediction markets
             </p>
           </div>
           
           <Link to="/request-market">
-            <Button className="gap-2 hover:scale-105 transition duration-300">
+            <Button className="gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
               <Plus className="h-4 w-4" />
               Submit Request
             </Button>
@@ -213,16 +213,16 @@ const MarketRequests = () => {
             ))}
           </div>
         ) : marketRequests.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-card border border-border/50 rounded-xl shadow-sm">
             <p className="text-muted-foreground mb-4">No market requests found</p>
             <Link to="/request-market">
-              <Button>Submit the first request</Button>
+              <Button className="bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg transition-all duration-300">Submit the first request</Button>
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {marketRequests.map(request => (
-              <div key={request.id} className="market-request-card animate-fade-in">
+              <div key={request.id} className="market-request-card animate-fade-in backdrop-blur-sm bg-card/80 border border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300">
                 <div className="flex justify-between mb-3">
                   <span className={getStatusBadgeClass(request.status)}>
                     {getStatusText(request.status)}
@@ -255,7 +255,7 @@ const MarketRequests = () => {
                 {request.status === 'approved' && request.market_id && (
                   <div className="mt-4 text-right">
                     <Link to={`/market/${request.market_id}`}>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors duration-300">
                         View Market
                       </Button>
                     </Link>
