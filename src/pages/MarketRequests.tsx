@@ -34,29 +34,33 @@ const MarketRequests = () => {
 
         if (data) {
           // Make this robust against profiles errors
-          const transformedData: MarketRequest[] = data.map(request => {
-            // If profiles is not an object or has no username, fallback
-            let username = "Anonymous";
-            if (request.profiles && typeof request.profiles === "object" && "username" in request.profiles) {
-              // @ts-ignore
-              username = request.profiles.username || "Anonymous";
+          const transformedData = data.map(request => {
+            // Create a safe profile object with username defaulting to "Anonymous"
+            const safeProfile = { username: "Anonymous" };
+            
+            // Only try to extract username if profiles exists and is an object
+            if (request.profiles && typeof request.profiles === "object" && 
+                "username" in request.profiles && request.profiles.username) {
+              safeProfile.username = request.profiles.username;
             }
+            
             return {
-              id: request.id,
-              question: request.question,
-              description: request.description,
-              category: request.category,
-              close_date: request.close_date,
-              requested_by: request.requested_by,
-              created_at: request.created_at,
-              status: request.status,
-              rejection_reason: request.rejection_reason,
-              market_id: request.market_id,
+              id: request.id || "",
+              question: request.question || "",
+              description: request.description || "",
+              category: request.category || "",
+              close_date: request.close_date || new Date().toISOString(),
+              requested_by: request.requested_by || "",
+              created_at: request.created_at || new Date().toISOString(),
+              status: request.status || "pending",
+              rejection_reason: request.rejection_reason || null,
+              market_id: request.market_id || null,
               upvotes: request.upvotes_count || 0,
               has_upvoted: request.has_user_upvoted || false,
-              profiles: { username },
-            };
+              profiles: safeProfile
+            } as MarketRequest;
           });
+          
           setMarketRequests(transformedData);
         }
       } catch (error) {
@@ -254,7 +258,6 @@ const MarketRequests = () => {
                   </button>
                 </div>
 
-                {/* Approval: view market, rejection reason */}
                 {request.status === 'approved' && request.market_id && (
                   <div className="mt-4 text-right">
                     <Link to={`/market/${request.market_id}`}>
@@ -271,7 +274,6 @@ const MarketRequests = () => {
                   </div>
                 )}
 
-                {/* FIX profiles username fallback */}
                 <div className="mt-3 text-xs text-muted-foreground">
                   By {request.profiles?.username || "Anonymous"}
                 </div>
@@ -285,4 +287,3 @@ const MarketRequests = () => {
 };
 
 export default MarketRequests;
-
