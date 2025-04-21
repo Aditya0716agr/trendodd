@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, LineChart, TrendingUp } from "lucide-react";
+import { ArrowRight, Award, Coins, Gift, LineChart, Star, TrendingUp } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import AnimatedChart from "@/components/home/AnimatedChart";
 import Logo from "@/components/home/Logo";
@@ -21,6 +21,30 @@ const Index = () => {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
+  };
+
+  const coinContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1, 
+      transition: { 
+        staggerChildren: 0.2,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const coinItem = {
+    hidden: { scale: 0, rotate: -180 },
+    show: { 
+      scale: 1, 
+      rotate: 0,
+      transition: { 
+        type: "spring",
+        stiffness: 260,
+        damping: 20
+      }
+    }
   };
 
   return (
@@ -58,6 +82,30 @@ const Index = () => {
                   Create Free Account
                 </Button>
               </Link>
+            </motion.div>
+
+            {/* Animated Coins */}
+            <motion.div 
+              className="mt-12 flex justify-center gap-4"
+              variants={coinContainer}
+              initial="hidden"
+              animate="show"
+            >
+              {[1, 2, 3, 4, 5].map((coin, index) => (
+                <motion.div
+                  key={index}
+                  className="relative"
+                  variants={coinItem}
+                  custom={index}
+                >
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg transform hover:rotate-y-180 transition-all duration-500">
+                    <Coins className="h-8 w-8 text-yellow-800" />
+                  </div>
+                  <div className="absolute -bottom-2 left-0 right-0 text-center text-sm font-bold text-primary">
+                    {[200, 500, 1000, 2000, 5000][index]}
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
           </motion.div>
         </div>
@@ -134,6 +182,113 @@ const Index = () => {
                 If your prediction is correct, each share pays out 1 virtual coin. If wrong, shares become worthless.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Redeem Rewards Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="container mx-auto max-w-5xl">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl font-bold mb-4">Redeem Your Winnings</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Turn your prediction skills into real-world rewards with our premium brand partners.
+            </p>
+          </motion.div>
+
+          <motion.div 
+            className="grid md:grid-cols-3 gap-8"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={container}
+          >
+            <motion.div 
+              variants={item}
+              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <div className="h-36 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                <Gift className="h-16 w-16 text-white" />
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Premium Subscriptions</h3>
+                <p className="text-muted-foreground mb-4">
+                  Redeem your coins for subscriptions to popular streaming and media services.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">From 5,000 coins</span>
+                  <div className="flex">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              variants={item}
+              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <div className="h-36 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                <Award className="h-16 w-16 text-white" />
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Gift Cards</h3>
+                <p className="text-muted-foreground mb-4">
+                  Exchange your coins for gift cards from popular retailers and online stores.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">From 10,000 coins</span>
+                  <div className="flex">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              variants={item}
+              className="bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <div className="h-36 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
+                <Coins className="h-16 w-16 text-white" />
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Exclusive Merchandise</h3>
+                <p className="text-muted-foreground mb-4">
+                  Spend your coins on limited edition products and exclusive merchandise.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">From 15,000 coins</span>
+                  <div className="flex">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <div className="text-center mt-10">
+            <Link to="/redeem">
+              <Button className="gap-2 hover:scale-105 transition-all duration-300">
+                Explore Rewards
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -217,6 +372,21 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-16 px-4 bg-primary text-primary-foreground">
         <div className="container mx-auto max-w-5xl text-center animate-fade-in">
+          <div className="flex justify-center mb-6">
+            <motion.div 
+              className="bg-white/20 p-4 rounded-full"
+              initial={{ scale: 0.8, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.3
+              }}
+            >
+              <Coins className="h-12 w-12" />
+            </motion.div>
+          </div>
           <h2 className="text-3xl font-bold mb-6">Ready to start predicting?</h2>
           <p className="mb-8 max-w-xl mx-auto">
             Sign up today and receive 10,000 virtual coins to start trading on prediction markets.

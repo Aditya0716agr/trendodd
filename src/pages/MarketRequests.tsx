@@ -33,23 +33,27 @@ const MarketRequests = () => {
         }
         
         // Transform data to match the MarketRequest interface
-        const transformedData = data.map(request => ({
-          id: request.id,
-          question: request.question,
-          description: request.description,
-          category: request.category,
-          close_date: request.close_date,
-          requested_by: request.requested_by,
-          created_at: request.created_at,
-          status: request.status,
-          rejection_reason: request.rejection_reason,
-          market_id: request.market_id,
-          upvotes: request.upvotes_count || 0,
-          has_upvoted: request.has_user_upvoted || false,
-          profiles: request.profiles || { username: "" },
-        }));
-        
-        setMarketRequests(transformedData);
+        if (data) {
+          const transformedData: MarketRequest[] = data.map(request => ({
+            id: request.id,
+            question: request.question,
+            description: request.description,
+            category: request.category,
+            close_date: request.close_date,
+            requested_by: request.requested_by,
+            created_at: request.created_at,
+            status: request.status,
+            rejection_reason: request.rejection_reason,
+            market_id: request.market_id,
+            upvotes: request.upvotes_count || 0,
+            has_upvoted: request.has_user_upvoted || false,
+            profiles: request.profiles ? { 
+              username: request.profiles.username || "Anonymous" 
+            } : { username: "Anonymous" }
+          }));
+          
+          setMarketRequests(transformedData);
+        }
       } catch (error) {
         console.error('Error in fetchMarketRequests:', error);
         toast({

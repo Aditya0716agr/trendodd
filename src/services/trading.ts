@@ -14,7 +14,7 @@ export interface TradeParams {
 export async function executeTrade({ marketId, position, shares, price, type }: TradeParams) {
   try {
     // Start a transaction
-    const amount = shares * price * (type === "buy" ? -1 : 1);
+    const amount = Number((shares * price * (type === "buy" ? -1 : 1)).toFixed(2));
     
     // Get user's profile to check balance
     const { data: user } = await supabase.auth.getUser();
@@ -52,8 +52,8 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
       return null;
     }
     
-    // Update user's balance
-    const newBalance = profile.wallet_balance + amount;
+    // Update user's balance - Fix potential floating point issues
+    const newBalance = Number((profile.wallet_balance + amount).toFixed(2));
     const { error: updateBalanceError } = await supabase
       .from("profiles")
       .update({ wallet_balance: newBalance })
@@ -79,7 +79,7 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
           position,
           shares,
           price,
-          amount: Math.abs(amount),
+          amount: Number(Math.abs(amount).toFixed(2)),
           balance: newBalance,
         },
       ])
@@ -128,7 +128,7 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
       let newAveragePrice = existingPosition.average_price;
       if (type === "buy" && newShares > 0) {
         const totalValue = existingPosition.shares * existingPosition.average_price + shares * price;
-        newAveragePrice = totalValue / newShares;
+        newAveragePrice = Number((totalValue / newShares).toFixed(4));
       }
       
       // If selling all shares, delete the position
@@ -218,14 +218,15 @@ export async function executeTrade({ marketId, position, shares, price, type }: 
       newNoPrice = Math.min(newNoPrice * adjustmentFactor, 0.99);
     }
     
-    const newVolume = market.volume + (shares * price);
+    // Fix potential floating point issues in volume
+    const newVolume = Number((market.volume + (shares * price)).toFixed(2));
     
     // Update market prices and volume
     const { error: updateMarketError } = await supabase
       .from("markets")
       .update({ 
-        yes_price: newYesPrice,
-        no_price: newNoPrice,
+        yes_price: Number(newYesPrice.toFixed(4)),
+        no_price: Number(newNoPrice.toFixed(4)),
         volume: newVolume,
         updated_at: new Date().toISOString()
       })
@@ -289,9 +290,9 @@ export async function getUserPositions(): Promise<UserPosition[]> {
       position: position.position as "yes" | "no",
       shares: position.shares,
       averagePrice: position.average_price,
-      potentialProfit: position.position === "yes" 
+      potentialProfit: Number((position.position === "yes" 
         ? position.shares * (1 - position.average_price)
-        : position.shares * (1 - (1 - position.average_price)),
+        : position.shares * (1 - (1 - position.average_price))).toFixed(2)),
       status: position.markets.status as MarketStatus,
     }));
   } catch (error) {
@@ -337,7 +338,7 @@ export async function getUserTransactions(): Promise<Transaction[]> {
       shares: tx.shares,
       price: tx.price,
       amount: tx.amount,
-      balance: tx.balance,
+      balance: Number(tx.balance.toFixed(2)),
     }));
   } catch (error) {
     console.error("Error in getUserTransactions:", error);
@@ -363,7 +364,7 @@ export async function getUserWalletBalance(): Promise<number> {
       return 0;
     }
     
-    return data.wallet_balance;
+    return Number(data.wallet_balance.toFixed(2));
   } catch (error) {
     console.error("Error in getUserWalletBalance:", error);
     return 0;

@@ -1,3 +1,4 @@
+
 export interface Market {
   id: string;
   question: string;
@@ -69,11 +70,11 @@ export interface MarketRequest {
   status?: string;
   rejection_reason?: string;
   market_id?: string;
-  upvotes_count?: number; // For compatibility
+  upvotes_count?: number;
   upvotes?: number;
-  has_user_upvoted?: boolean; // For compatibility
+  has_user_upvoted?: boolean;
   has_upvoted?: boolean;
-  profiles?: {
+  profiles?: { 
     username?: string;
-  };
+  } | null;
 }
