@@ -15,43 +15,48 @@ const MarketRequests = () => {
   const { toast } = useToast();
   const [marketRequests, setMarketRequests] = useState<MarketRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Fetch market requests
   useEffect(() => {
     const fetchMarketRequests = async () => {
       try {
         setLoading(true);
-        
+
         const { data, error } = await supabase
           .from('market_requests_with_votes')
           .select('*, profiles:requested_by(username)')
           .order('created_at', { ascending: false });
-          
+
         if (error) {
           console.error('Error fetching market requests:', error);
           throw error;
         }
-        
-        // Transform data to match the MarketRequest interface
+
         if (data) {
-          const transformedData: MarketRequest[] = data.map(request => ({
-            id: request.id,
-            question: request.question,
-            description: request.description,
-            category: request.category,
-            close_date: request.close_date,
-            requested_by: request.requested_by,
-            created_at: request.created_at,
-            status: request.status,
-            rejection_reason: request.rejection_reason,
-            market_id: request.market_id,
-            upvotes: request.upvotes_count || 0,
-            has_upvoted: request.has_user_upvoted || false,
-            profiles: request.profiles ? { 
-              username: request.profiles.username || "Anonymous" 
-            } : { username: "Anonymous" }
-          }));
-          
+          // Make this robust against profiles errors
+          const transformedData: MarketRequest[] = data.map(request => {
+            // If profiles is not an object or has no username, fallback
+            let username = "Anonymous";
+            if (request.profiles && typeof request.profiles === "object" && "username" in request.profiles) {
+              // @ts-ignore
+              username = request.profiles.username || "Anonymous";
+            }
+            return {
+              id: request.id,
+              question: request.question,
+              description: request.description,
+              category: request.category,
+              close_date: request.close_date,
+              requested_by: request.requested_by,
+              created_at: request.created_at,
+              status: request.status,
+              rejection_reason: request.rejection_reason,
+              market_id: request.market_id,
+              upvotes: request.upvotes_count || 0,
+              has_upvoted: request.has_user_upvoted || false,
+              profiles: { username },
+            };
+          });
           setMarketRequests(transformedData);
         }
       } catch (error) {
@@ -65,10 +70,10 @@ const MarketRequests = () => {
         setLoading(false);
       }
     };
-    
+
     fetchMarketRequests();
   }, [toast]);
-  
+
   // Handle upvote
   const handleUpvote = async (requestId: string) => {
     if (!user) {
@@ -79,12 +84,11 @@ const MarketRequests = () => {
       });
       return;
     }
-    
+
     try {
-      // Check if already upvoted
       const requestToUpdate = marketRequests.find(r => r.id === requestId);
       if (!requestToUpdate) return;
-      
+
       if (requestToUpdate.has_upvoted) {
         // Remove upvote
         const { error } = await supabase
@@ -92,22 +96,21 @@ const MarketRequests = () => {
           .delete()
           .eq('market_request_id', requestId)
           .eq('user_id', user.id);
-          
+
         if (error) throw error;
-        
-        // Update local state
-        setMarketRequests(prev => 
-          prev.map(request => 
-            request.id === requestId 
-              ? { 
-                  ...request, 
-                  upvotes: (request.upvotes || 0) - 1, 
-                  has_upvoted: false 
-                } 
+
+        setMarketRequests(prev =>
+          prev.map(request =>
+            request.id === requestId
+              ? {
+                  ...request,
+                  upvotes: (request.upvotes || 0) - 1,
+                  has_upvoted: false
+                }
               : request
           )
         );
-        
+
         toast({
           title: "Upvote removed",
           description: "You've removed your upvote for this market request",
@@ -120,22 +123,21 @@ const MarketRequests = () => {
             market_request_id: requestId,
             user_id: user.id,
           });
-          
+
         if (error) throw error;
-        
-        // Update local state
-        setMarketRequests(prev => 
-          prev.map(request => 
-            request.id === requestId 
-              ? { 
-                  ...request, 
-                  upvotes: (request.upvotes || 0) + 1, 
-                  has_upvoted: true 
-                } 
+
+        setMarketRequests(prev =>
+          prev.map(request =>
+            request.id === requestId
+              ? {
+                  ...request,
+                  upvotes: (request.upvotes || 0) + 1,
+                  has_upvoted: true
+                }
               : request
           )
         );
-        
+
         toast({
           title: "Upvoted!",
           description: "You've upvoted this market request",
@@ -150,7 +152,7 @@ const MarketRequests = () => {
       });
     }
   };
-  
+
   // Helper to get status badge class
   const getStatusBadgeClass = (status?: string) => {
     switch (status) {
@@ -162,7 +164,7 @@ const MarketRequests = () => {
         return 'market-request-badge market-request-badge-pending';
     }
   };
-  
+
   // Helper to get status text
   const getStatusText = (status?: string) => {
     switch (status) {
@@ -174,7 +176,7 @@ const MarketRequests = () => {
         return 'Pending';
     }
   };
-  
+
   return (
     <Layout>
       <div className="container py-8 md:py-12">
@@ -185,7 +187,7 @@ const MarketRequests = () => {
               Browse and upvote community-requested prediction markets
             </p>
           </div>
-          
+
           <Link to="/request-market">
             <Button className="gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
               <Plus className="h-4 w-4" />
@@ -193,12 +195,12 @@ const MarketRequests = () => {
             </Button>
           </Link>
         </div>
-        
+
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((_, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="market-request-card animate-pulse-light"
               >
                 <div className="h-6 w-20 bg-muted rounded mb-3"></div>
@@ -227,23 +229,23 @@ const MarketRequests = () => {
                   <span className={getStatusBadgeClass(request.status)}>
                     {getStatusText(request.status)}
                   </span>
-                  
+
                   <div className="text-sm text-muted-foreground flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5 mr-1" />
                     {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                   </div>
                 </div>
-                
+
                 <h3 className="text-xl font-semibold mb-2">{request.question}</h3>
                 <p className="text-muted-foreground mb-4 line-clamp-2">{request.description}</p>
-                
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <CalendarDays className="h-3.5 w-3.5" />
                     <span>Closes: {new Date(request.close_date).toLocaleDateString()}</span>
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleUpvote(request.id)}
                     className={`upvote-button ${request.has_upvoted ? 'upvote-button-active' : 'upvote-button-inactive'}`}
                   >
@@ -251,7 +253,8 @@ const MarketRequests = () => {
                     <span>{request.upvotes || 0}</span>
                   </button>
                 </div>
-                
+
+                {/* Approval: view market, rejection reason */}
                 {request.status === 'approved' && request.market_id && (
                   <div className="mt-4 text-right">
                     <Link to={`/market/${request.market_id}`}>
@@ -261,12 +264,17 @@ const MarketRequests = () => {
                     </Link>
                   </div>
                 )}
-                
+
                 {request.status === 'rejected' && request.rejection_reason && (
                   <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
                     Reason: {request.rejection_reason}
                   </div>
                 )}
+
+                {/* FIX profiles username fallback */}
+                <div className="mt-3 text-xs text-muted-foreground">
+                  By {request.profiles?.username || "Anonymous"}
+                </div>
               </div>
             ))}
           </div>
@@ -277,3 +285,4 @@ const MarketRequests = () => {
 };
 
 export default MarketRequests;
+
