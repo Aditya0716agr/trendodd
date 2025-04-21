@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,7 +40,6 @@
     
     --market-yes: 144 62% 65%; /* green */
     --market-no: 0 84% 70%;    /* red */
-
   }
 
   .dark {
@@ -145,6 +145,27 @@
   @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
 }
 
+/* Market request card styles */
+.market-request-card {
+  @apply bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300;
+}
+
+.market-request-badge {
+  @apply px-2 py-1 rounded text-xs font-medium;
+}
+
+.market-request-badge-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.market-request-badge-approved {
+  @apply bg-green-100 text-green-800;
+}
+
+.market-request-badge-rejected {
+  @apply bg-red-100 text-red-800;
+}
+
 /* Enhanced voucher card styles */
 .voucher-card {
   @apply bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300;
@@ -172,4 +193,26 @@
 .btn-glow:hover::after {
   @apply opacity-100;
   animation: shine 1.5s infinite;
+}
+
+/* Improved navigation styles */
+.nav-link {
+  @apply text-sm font-medium transition-colors hover:text-primary hover:scale-105 transform duration-300;
+}
+
+.nav-link-active {
+  @apply text-primary font-semibold;
+}
+
+/* Upvote button styles */
+.upvote-button {
+  @apply flex items-center gap-1 text-sm font-medium rounded-full px-3 py-1.5 transition-all duration-300;
+}
+
+.upvote-button-active {
+  @apply bg-primary/20 text-primary;
+}
+
+.upvote-button-inactive {
+  @apply hover:bg-primary/10 bg-secondary;
 }

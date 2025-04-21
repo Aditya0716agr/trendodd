@@ -1,298 +1,272 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getPendingMarketRequests, upvoteMarketRequest } from "@/services/market";
-import { motion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ThumbsUp, Clock, Search, Calendar } from "lucide-react";
-import { MarketCategory } from "@/types/market";
-
-interface MarketRequest {
-  id: string;
-  question: string;
-  description: string;
-  category: string;
-  close_date: string;
-  requested_by: string;
-  created_at: string;
-  upvotes: number;
-  has_upvoted: boolean;
-  profiles?: {
-    username?: string;
-  } | any; // Allow any type for profiles to handle SelectQueryError
-}
+import { MarketRequest } from "@/types/market";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import Layout from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { ArrowUp, CalendarDays, Clock, Plus } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 const MarketRequests = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { toast } = useToast();
   const [marketRequests, setMarketRequests] = useState<MarketRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<MarketRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | "all">("all");
-
-  const categories = [
-    { id: "crypto", name: "Crypto" },
-    { id: "stocks", name: "Stocks" },
-    { id: "politics", name: "Politics" },
-    { id: "economy", name: "Economy" },
-    { id: "technology", name: "Technology" },
-    { id: "sports", name: "Sports" },
-    { id: "entertainment", name: "Entertainment" },
-  ];
-
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch market requests
   useEffect(() => {
+    const fetchMarketRequests = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('market_requests_with_votes')
+          .select('*, profiles:requested_by(*)')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Error fetching market requests:', error);
+          throw error;
+        }
+        
+        // Transform data to match the MarketRequest interface
+        const transformedData = data.map(request => ({
+          id: request.id,
+          question: request.question,
+          description: request.description,
+          category: request.category,
+          close_date: request.close_date,
+          requested_by: request.requested_by,
+          created_at: request.created_at,
+          status: request.status,
+          rejection_reason: request.rejection_reason,
+          market_id: request.market_id,
+          upvotes: request.upvotes_count || 0,
+          has_upvoted: request.has_user_upvoted || false,
+          profiles: request.profiles || { username: "" },
+        }));
+        
+        setMarketRequests(transformedData);
+      } catch (error) {
+        console.error('Error in fetchMarketRequests:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load market requests. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchMarketRequests();
-  }, []);
-
-  useEffect(() => {
-    let results = [...marketRequests];
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      results = results.filter(request => 
-        request.question.toLowerCase().includes(query) || 
-        request.description.toLowerCase().includes(query)
-      );
-    }
-    
-    if (activeCategory !== "all") {
-      results = results.filter(request => request.category === activeCategory);
-    }
-    
-    // Sort by upvotes (highest first)
-    results.sort((a, b) => b.upvotes - a.upvotes);
-    
-    setFilteredRequests(results);
-  }, [searchQuery, activeCategory, marketRequests]);
-
-  const fetchMarketRequests = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getPendingMarketRequests();
-      // Transform the data to match the MarketRequest interface
-      const transformedData: MarketRequest[] = data.map(item => ({
-        id: item.id,
-        question: item.question,
-        description: item.description,
-        category: item.category,
-        close_date: item.close_date,
-        requested_by: item.requested_by,
-        created_at: item.created_at,
-        upvotes: item.upvotes_count || 0,
-        has_upvoted: item.has_user_upvoted || false,
-        profiles: item.profiles
-      }));
-      
-      setMarketRequests(transformedData);
-    } catch (error) {
-      console.error("Error fetching market requests:", error);
-      toast.error("Failed to load market requests");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  }, [toast]);
+  
+  // Handle upvote
   const handleUpvote = async (requestId: string) => {
     if (!user) {
-      toast.error("Please sign in to upvote");
-      navigate("/login");
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to upvote market requests",
+        variant: "destructive",
+      });
       return;
     }
-
+    
     try {
-      const result = await upvoteMarketRequest(requestId);
+      // Check if already upvoted
+      const requestToUpdate = marketRequests.find(r => r.id === requestId);
+      if (!requestToUpdate) return;
       
-      if (result !== null) {
-        setMarketRequests(prevRequests => 
-          prevRequests.map(request => {
-            if (request.id === requestId) {
-              return {
-                ...request,
-                upvotes: result ? request.upvotes + 1 : request.upvotes - 1,
-                has_upvoted: result
-              };
-            }
-            return request;
-          })
+      if (requestToUpdate.has_upvoted) {
+        // Remove upvote
+        const { error } = await supabase
+          .from('market_request_upvotes')
+          .delete()
+          .eq('market_request_id', requestId)
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        // Update local state
+        setMarketRequests(prev => 
+          prev.map(request => 
+            request.id === requestId 
+              ? { 
+                  ...request, 
+                  upvotes: (request.upvotes || 0) - 1, 
+                  has_upvoted: false 
+                } 
+              : request
+          )
         );
+        
+        toast({
+          title: "Upvote removed",
+          description: "You've removed your upvote for this market request",
+        });
+      } else {
+        // Add upvote
+        const { error } = await supabase
+          .from('market_request_upvotes')
+          .insert({
+            market_request_id: requestId,
+            user_id: user.id,
+          });
+          
+        if (error) throw error;
+        
+        // Update local state
+        setMarketRequests(prev => 
+          prev.map(request => 
+            request.id === requestId 
+              ? { 
+                  ...request, 
+                  upvotes: (request.upvotes || 0) + 1, 
+                  has_upvoted: true 
+                } 
+              : request
+          )
+        );
+        
+        toast({
+          title: "Upvoted!",
+          description: "You've upvoted this market request",
+        });
       }
     } catch (error) {
-      console.error("Error upvoting request:", error);
-      toast.error("Failed to register your vote");
+      console.error('Error in handleUpvote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process your upvote. Please try again.",
+        variant: "destructive",
+      });
     }
   };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
-  };
-
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+  
+  // Helper to get status badge class
+  const getStatusBadgeClass = (status?: string) => {
+    switch (status) {
+      case 'approved':
+        return 'market-request-badge market-request-badge-approved';
+      case 'rejected':
+        return 'market-request-badge market-request-badge-rejected';
+      default:
+        return 'market-request-badge market-request-badge-pending';
     }
   };
-
-  const item = {
-    hidden: { y: 20, opacity: 0 },
-    show: { y: 0, opacity: 1 }
+  
+  // Helper to get status text
+  const getStatusText = (status?: string) => {
+    switch (status) {
+      case 'approved':
+        return 'Approved';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Pending';
+    }
   };
-
+  
   return (
     <Layout>
-      <div className="container py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold mb-2">Community Market Requests</h1>
-          <p className="text-muted-foreground">
-            Browse and upvote market ideas submitted by our community. The most popular ideas may be turned into real markets!
-          </p>
-        </motion.div>
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search requests..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <div className="container py-8 md:py-12">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Market Requests</h1>
+            <p className="text-muted-foreground">
+              Browse and upvote community-requested prediction markets
+            </p>
           </div>
           
-          <Button onClick={() => navigate("/request-market")} className="w-full md:w-auto">
-            Submit Your Idea
-          </Button>
+          <Link to="/request-market">
+            <Button className="gap-2 hover:scale-105 transition duration-300">
+              <Plus className="h-4 w-4" />
+              Submit Request
+            </Button>
+          </Link>
         </div>
         
-        <Tabs defaultValue="all" className="mb-8" onValueChange={(value) => setActiveCategory(value as string | "all")}>
-          <TabsList className="mb-6 flex flex-wrap h-auto">
-            <TabsTrigger value="all" className="transition-all duration-200">All Categories</TabsTrigger>
-            {categories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="transition-all duration-200">
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-4">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Card key={index} className="animate-pulse">
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <Skeleton className="h-5 w-16 rounded" />
-                      <Skeleton className="h-4 w-24 rounded" />
-                    </div>
-                    <Skeleton className="h-6 w-full max-w-md mt-2" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full max-w-lg mb-2" />
-                    <Skeleton className="h-4 w-full max-w-md" />
-                  </CardContent>
-                  <CardFooter>
-                    <div className="flex justify-between items-center w-full">
-                      <Skeleton className="h-4 w-32 rounded" />
-                      <Skeleton className="h-9 w-24 rounded" />
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : filteredRequests.length === 0 ? (
-            <motion.div 
-              className="text-center py-12 border rounded-lg bg-muted/50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <p className="text-muted-foreground">No market requests match your criteria.</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveCategory("all");
-                }}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((_, index) => (
+              <div 
+                key={index} 
+                className="market-request-card animate-pulse-light"
               >
-                Clear Filters
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="grid grid-cols-1 gap-4"
-              variants={container}
-              initial="hidden"
-              animate="show"
-            >
-              {filteredRequests.map((request) => (
-                <motion.div key={request.id} variants={item}>
-                  <Card className="overflow-hidden border hover:shadow-md transition-shadow duration-300">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <Badge className="capitalize">{request.category}</Badge>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                          <span>Closes: {formatDate(request.close_date)}</span>
-                        </div>
-                      </div>
-                      <CardTitle className="mt-2 text-xl">{request.question}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">{request.description}</p>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center border-t pt-4">
-                      <div className="flex items-center text-sm">
-                        <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          Requested on {formatDate(request.created_at)} by {
-                            request.profiles && typeof request.profiles === 'object' && 'username' in request.profiles 
-                              ? request.profiles.username 
-                              : 'Anonymous'
-                          }
-                        </span>
-                      </div>
-                      <Button 
-                        variant={request.has_upvoted ? "default" : "outline"}
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handleUpvote(request.id)}
-                      >
-                        <ThumbsUp className="h-4 w-4" />
-                        <span>
-                          {request.upvotes} {request.upvotes === 1 ? "vote" : "votes"}
-                        </span>
+                <div className="h-6 w-20 bg-muted rounded mb-3"></div>
+                <div className="h-7 w-3/4 bg-muted rounded mb-2"></div>
+                <div className="h-4 w-full bg-muted rounded mb-2"></div>
+                <div className="h-4 w-2/3 bg-muted rounded mb-4"></div>
+                <div className="flex justify-between items-center">
+                  <div className="h-5 w-32 bg-muted rounded"></div>
+                  <div className="h-8 w-20 bg-muted rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : marketRequests.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">No market requests found</p>
+            <Link to="/request-market">
+              <Button>Submit the first request</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {marketRequests.map(request => (
+              <div key={request.id} className="market-request-card animate-fade-in">
+                <div className="flex justify-between mb-3">
+                  <span className={getStatusBadgeClass(request.status)}>
+                    {getStatusText(request.status)}
+                  </span>
+                  
+                  <div className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 mr-1" />
+                    {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+                  </div>
+                </div>
+                
+                <h3 className="text-xl font-semibold mb-2">{request.question}</h3>
+                <p className="text-muted-foreground mb-4 line-clamp-2">{request.description}</p>
+                
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    <span>Closes: {new Date(request.close_date).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleUpvote(request.id)}
+                    className={`upvote-button ${request.has_upvoted ? 'upvote-button-active' : 'upvote-button-inactive'}`}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    <span>{request.upvotes || 0}</span>
+                  </button>
+                </div>
+                
+                {request.status === 'approved' && request.market_id && (
+                  <div className="mt-4 text-right">
+                    <Link to={`/market/${request.market_id}`}>
+                      <Button variant="outline" size="sm">
+                        View Market
                       </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </Tabs>
+                    </Link>
+                  </div>
+                )}
+                
+                {request.status === 'rejected' && request.rejection_reason && (
+                  <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                    Reason: {request.rejection_reason}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -1,4 +1,3 @@
-
 export interface Market {
   id: string;
   question: string;
@@ -57,4 +56,24 @@ export interface Transaction {
   price?: number;
   amount: number;
   balance: number;
+}
+
+export interface MarketRequest {
+  id: string;
+  question: string;
+  description: string;
+  category: string;
+  close_date: string;
+  requested_by: string;
+  created_at: string;
+  status?: string;
+  rejection_reason?: string;
+  market_id?: string;
+  upvotes_count?: number; // For compatibility
+  upvotes?: number;
+  has_user_upvoted?: boolean; // For compatibility
+  has_upvoted?: boolean;
+  profiles?: {
+    username?: string;
+  };
 }

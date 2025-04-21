@@ -4,10 +4,19 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Menu, X, Coins } from "lucide-react";
+import { Menu, X, Coins, ChevronDown } from "lucide-react";
 import NavbarBranding from "./NavbarBranding";
 import { signOut } from "@/services/auth";
 import { motion } from "framer-motion";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -31,12 +40,6 @@ const Navbar = () => {
     { path: "/market-requests", label: "Market Requests" },
     { path: "/how-it-works", label: "How It Works" },
     { path: "/blog", label: "Blog" },
-    { path: "/request-market", label: "Request Idea" },
-  ];
-
-  const authenticatedNavItems = [
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/redeem", label: "Redeem" },
   ];
 
   const isActive = (path: string) => {
@@ -54,29 +57,68 @@ const Navbar = () => {
               <Link 
                 key={item.path}
                 to={item.path} 
-                className={`text-sm font-medium transition-colors hover:scale-105 transform duration-300 ${
-                  isActive(item.path) ? "text-primary font-semibold" : "hover:text-primary"
-                }`}
+                className={`nav-link ${isActive(item.path) ? "nav-link-active" : ""}`}
               >
                 {item.label}
               </Link>
             ))}
             
-            {user && (
-              <>
-                {authenticatedNavItems.map((item) => (
-                  <Link 
-                    key={item.path}
-                    to={item.path} 
-                    className={`text-sm font-medium transition-colors hover:scale-105 transform duration-300 ${
-                      isActive(item.path) ? "text-primary font-semibold" : "hover:text-primary"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </>
-            )}
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="hover:scale-105 transform duration-300">
+                    More
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[200px] gap-3 p-4">
+                      <li>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to="/request-market"
+                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          >
+                            <div className="text-sm font-medium">Request Idea</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Submit your market ideas
+                            </p>
+                          </Link>
+                        </NavigationMenuLink>
+                      </li>
+                      {user && (
+                        <>
+                          <li>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to="/dashboard"
+                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                              >
+                                <div className="text-sm font-medium">Dashboard</div>
+                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                  View your account dashboard
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                          <li>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to="/redeem"
+                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                              >
+                                <div className="text-sm font-medium">Redeem</div>
+                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                  Redeem your earned points
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </nav>
         </div>
         
@@ -145,20 +187,34 @@ const Navbar = () => {
               </Link>
             ))}
             
+            <Link 
+              to="/request-market"
+              className="px-2 py-2 rounded-md transition-colors hover:bg-muted"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Request Idea
+            </Link>
+            
             {user && (
               <>
-                {authenticatedNavItems.map((item) => (
-                  <Link 
-                    key={item.path}
-                    to={item.path} 
-                    className={`px-2 py-2 rounded-md transition-colors ${
-                      isActive(item.path) ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                <Link 
+                  to="/dashboard"
+                  className={`px-2 py-2 rounded-md transition-colors ${
+                    isActive("/dashboard") ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/redeem"
+                  className={`px-2 py-2 rounded-md transition-colors ${
+                    isActive("/redeem") ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Redeem
+                </Link>
               </>
             )}
             

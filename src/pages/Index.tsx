@@ -1,28 +1,52 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Coins, LineChart, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Coins, LineChart, TrendingUp } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import AnimatedChart from "@/components/home/AnimatedChart";
 import Logo from "@/components/home/Logo";
+import { motion } from "framer-motion";
 
 const Index = () => {
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="px-4 py-20 md:py-32 bg-gradient-to-b from-primary/10 to-background">
+      <section className="px-4 py-16 md:py-28 bg-gradient-to-b from-primary/10 to-background">
         <div className="container mx-auto max-w-5xl">
-          <div className="text-center animate-fade-in">
-            <div className="flex justify-center mb-6">
-              <Logo size="lg" />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+          <motion.div 
+            className="text-center"
+            initial="hidden"
+            animate="show"
+            variants={container}
+          >
+            <motion.div variants={item} className="flex justify-center mb-6">
+              <Logo size="lg" animate={true} />
+            </motion.div>
+            
+            <motion.h1 variants={item} className="text-4xl md:text-6xl font-bold mb-6">
               Predict the Future. <span className="text-primary">Trade</span> the Odds.
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in">
+            </motion.h1>
+            
+            <motion.p variants={item} className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join TrendOdds, where you can trade virtual contracts on real-world events and test your prediction skills.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in">
+            </motion.p>
+            
+            <motion.div variants={item} className="flex flex-col sm:flex-row justify-center gap-4">
               <Link to="/markets">
                 <Button size="lg" className="w-full sm:w-auto gap-2 hover:scale-105 transition duration-300">
                   Explore Markets
@@ -34,8 +58,8 @@ const Index = () => {
                   Create Free Account
                 </Button>
               </Link>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
