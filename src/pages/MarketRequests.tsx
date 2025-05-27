@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { MarketRequest } from "@/types/market";
@@ -36,10 +35,10 @@ const MarketRequests = () => {
           const transformedData: MarketRequest[] = data.map(request => {
             // Safely handle profiles data with proper null checking
             let username = "Anonymous";
-            if (request.profiles) {
+            if (request.profiles && request.profiles !== null) {
               if (Array.isArray(request.profiles) && request.profiles.length > 0) {
                 username = request.profiles[0]?.username || "Anonymous";
-              } else if (typeof request.profiles === "object" && request.profiles !== null) {
+              } else if (typeof request.profiles === "object") {
                 const profileObj = request.profiles as { username?: string };
                 username = profileObj.username || "Anonymous";
               }
@@ -104,14 +103,15 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Create new array with updated request
-        const updatedRequests = marketRequests.map(request => {
+        // Create new array with updated request - explicitly type the update
+        const updatedRequests: MarketRequest[] = marketRequests.map(request => {
           if (request.id === requestId) {
-            return {
+            const updatedRequest: MarketRequest = {
               ...request,
               upvotes: Math.max(0, (request.upvotes || 0) - 1),
               has_upvoted: false
             };
+            return updatedRequest;
           }
           return request;
         });
@@ -132,14 +132,15 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Create new array with updated request
-        const updatedRequests = marketRequests.map(request => {
+        // Create new array with updated request - explicitly type the update
+        const updatedRequests: MarketRequest[] = marketRequests.map(request => {
           if (request.id === requestId) {
-            return {
+            const updatedRequest: MarketRequest = {
               ...request,
               upvotes: (request.upvotes || 0) + 1,
               has_upvoted: true
             };
+            return updatedRequest;
           }
           return request;
         });
