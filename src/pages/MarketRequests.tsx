@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -24,11 +23,10 @@ const MarketRequests = () => {
         .from('market_requests')
         .select(`
           *,
-          profiles!market_requests_requested_by_fkey (
+          profiles:requested_by (
             username
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (error) {
         console.error("Error fetching market requests:", error);
@@ -95,14 +93,14 @@ const MarketRequests = () => {
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'crypto': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'politics': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'stocks': return 'bg-green-50 text-green-700 border-green-200';
-      case 'sports': return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'technology': return 'bg-sky-50 text-sky-700 border-sky-200';
-      case 'entertainment': return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'economy': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'crypto': return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800';
+      case 'politics': return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800';
+      case 'stocks': return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800';
+      case 'sports': return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800';
+      case 'technology': return 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800';
+      case 'entertainment': return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800';
+      case 'economy': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
@@ -142,7 +140,7 @@ const MarketRequests = () => {
               <Input
                 type="text"
                 placeholder="Search market requests..."
-                className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary"
+                className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary bg-card"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -160,7 +158,7 @@ const MarketRequests = () => {
           <div className="space-y-6">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((request) => (
-                <Card key={request.id} className="market-card hover:shadow-lg transition-all duration-200">
+                <Card key={request.id} className="market-card hover:shadow-lg transition-all duration-200 border-border bg-card">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -178,7 +176,7 @@ const MarketRequests = () => {
                   </CardHeader>
                   
                   <CardContent className="pt-0">
-                    <CardDescription className="body-base mb-4 leading-relaxed">
+                    <CardDescription className="body-base mb-4 leading-relaxed text-muted-foreground">
                       {request.description}
                     </CardDescription>
                     
@@ -201,7 +199,7 @@ const MarketRequests = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="upvote-button upvote-button-inactive"
+                        className="upvote-button upvote-button-inactive hover:bg-primary/10 border-border"
                         onClick={() => handleUpvote(request.id)}
                       >
                         <ThumbsUp className="h-4 w-4" />
@@ -213,7 +211,7 @@ const MarketRequests = () => {
               ))
             ) : (
               <div className="text-center py-16">
-                <Card className="market-card p-12">
+                <Card className="market-card p-12 border-border bg-card">
                   <div className="text-6xl mb-4">💡</div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">No requests found</h3>
                   <p className="text-muted-foreground">Try adjusting your search criteria or check back later for new requests.</p>
