@@ -44,6 +44,10 @@ const Navbar = () => {
     return location.pathname === path;
   };
 
+  const formatBalance = (balance: number) => {
+    return Math.floor(balance).toLocaleString();
+  };
+
   return (
     <header className="border-b bg-background sticky top-0 z-50 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between container-padding">
@@ -131,7 +135,7 @@ const Navbar = () => {
                   <div className="flex items-center gap-1 text-primary">
                     <Coins className="h-4 w-4" />
                     <span className="text-sm font-semibold">
-                      {user.user_metadata?.wallet_balance || 1000}
+                      {formatBalance(user.user_metadata?.wallet_balance || 1000)}
                     </span>
                   </div>
                 </div>
@@ -210,7 +214,7 @@ const Navbar = () => {
                   <div className="flex items-center gap-1 mt-1 text-primary">
                     <Coins className="h-4 w-4" />
                     <span className="text-sm font-semibold">
-                      {user.user_metadata?.wallet_balance || 1000} coins
+                      {formatBalance(user.user_metadata?.wallet_balance || 1000)} coins
                     </span>
                   </div>
                 </div>

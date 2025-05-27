@@ -92,7 +92,7 @@ const Markets = () => {
   };
 
   const MarketSkeleton = () => (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm animate-pulse">
+    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Skeleton className="h-6 w-6 rounded" />
@@ -116,14 +116,14 @@ const Markets = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="container section-spacing container-padding">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h1 className="heading-1 mb-4">
               Explore Markets
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="body-large max-w-2xl mx-auto">
               Discover and trade on prediction markets
             </p>
           </div>
@@ -131,11 +131,11 @@ const Markets = () => {
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-8">
             <div className="relative">
-              <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search markets..."
-                className="pl-12 h-12 rounded-2xl border-gray-200 text-base shadow-sm focus:border-primary focus:ring-primary"
+                className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary bg-card"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -152,7 +152,7 @@ const Markets = () => {
 
           {/* Sort Controls */}
           <div className="flex justify-between items-center mb-8">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               {filteredMarkets.length} markets found
             </div>
             <SortControls
@@ -174,10 +174,10 @@ const Markets = () => {
               ))
             ) : (
               <div className="col-span-full text-center py-16">
-                <div className="bg-white border border-gray-200 rounded-2xl p-12 shadow-sm">
+                <div className="bg-card border border-border rounded-2xl p-12 shadow-sm">
                   <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No markets found</h3>
-                  <p className="text-gray-600">Try adjusting your search criteria or browse different categories.</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No markets found</h3>
+                  <p className="text-muted-foreground">Try adjusting your search criteria or browse different categories.</p>
                 </div>
               </div>
             )}
