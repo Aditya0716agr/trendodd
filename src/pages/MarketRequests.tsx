@@ -104,17 +104,18 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        setMarketRequests(prev =>
-          prev.map(request =>
-            request.id === requestId
-              ? {
-                  ...request,
-                  upvotes: Math.max(0, (request.upvotes || 0) - 1),
-                  has_upvoted: false
-                }
-              : request
-          )
-        );
+        // Create new array with updated request
+        const updatedRequests = marketRequests.map(request => {
+          if (request.id === requestId) {
+            return {
+              ...request,
+              upvotes: Math.max(0, (request.upvotes || 0) - 1),
+              has_upvoted: false
+            };
+          }
+          return request;
+        });
+        setMarketRequests(updatedRequests);
 
         toast({
           title: "Upvote removed",
@@ -131,17 +132,18 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        setMarketRequests(prev =>
-          prev.map(request =>
-            request.id === requestId
-              ? {
-                  ...request,
-                  upvotes: (request.upvotes || 0) + 1,
-                  has_upvoted: true
-                }
-              : request
-          )
-        );
+        // Create new array with updated request
+        const updatedRequests = marketRequests.map(request => {
+          if (request.id === requestId) {
+            return {
+              ...request,
+              upvotes: (request.upvotes || 0) + 1,
+              has_upvoted: true
+            };
+          }
+          return request;
+        });
+        setMarketRequests(updatedRequests);
 
         toast({
           title: "Upvoted!",
