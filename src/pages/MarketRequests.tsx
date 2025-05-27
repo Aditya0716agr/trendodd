@@ -33,15 +33,15 @@ const MarketRequests = () => {
         }
 
         if (data) {
-          // Make this robust against profiles errors
-          const transformedData = data.map(request => {
-            // Create a safe profile object with username defaulting to "Anonymous"
-            const safeProfile = { username: "Anonymous" };
-            
-            // Only try to extract username if profiles exists and is an object
-            if (request.profiles && typeof request.profiles === "object" && 
-                "username" in request.profiles && request.profiles.username) {
-              safeProfile.username = request.profiles.username;
+          const transformedData: MarketRequest[] = data.map(request => {
+            // Safely handle profiles data
+            let username = "Anonymous";
+            if (request.profiles && 
+                request.profiles !== null && 
+                typeof request.profiles === "object" && 
+                'username' in request.profiles && 
+                typeof request.profiles.username === 'string') {
+              username = request.profiles.username;
             }
             
             return {
@@ -57,8 +57,8 @@ const MarketRequests = () => {
               market_id: request.market_id || null,
               upvotes: request.upvotes_count || 0,
               has_upvoted: request.has_user_upvoted || false,
-              profiles: safeProfile
-            } as MarketRequest;
+              profiles: { username }
+            };
           });
           
           setMarketRequests(transformedData);
@@ -108,7 +108,7 @@ const MarketRequests = () => {
             request.id === requestId
               ? {
                   ...request,
-                  upvotes: (request.upvotes || 0) - 1,
+                  upvotes: Math.max(0, (request.upvotes || 0) - 1),
                   has_upvoted: false
                 }
               : request
@@ -161,11 +161,11 @@ const MarketRequests = () => {
   const getStatusBadgeClass = (status?: string) => {
     switch (status) {
       case 'approved':
-        return 'market-request-badge market-request-badge-approved';
+        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200';
       case 'rejected':
-        return 'market-request-badge market-request-badge-rejected';
+        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200';
       default:
-        return 'market-request-badge market-request-badge-pending';
+        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200';
     }
   };
 
@@ -186,7 +186,9 @@ const MarketRequests = () => {
       <div className="container py-8 md:py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">Market Requests</h1>
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+              Market Requests
+            </h1>
             <p className="text-muted-foreground">
               Browse and upvote community-requested prediction markets
             </p>
@@ -205,7 +207,7 @@ const MarketRequests = () => {
             {[1, 2, 3, 4].map((_, index) => (
               <div
                 key={index}
-                className="market-request-card animate-pulse-light"
+                className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 animate-pulse"
               >
                 <div className="h-6 w-20 bg-muted rounded mb-3"></div>
                 <div className="h-7 w-3/4 bg-muted rounded mb-2"></div>
@@ -219,16 +221,21 @@ const MarketRequests = () => {
             ))}
           </div>
         ) : marketRequests.length === 0 ? (
-          <div className="text-center py-12 bg-card border border-border/50 rounded-xl shadow-sm">
+          <div className="text-center py-12 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm">
             <p className="text-muted-foreground mb-4">No market requests found</p>
             <Link to="/request-market">
-              <Button className="bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg transition-all duration-300">Submit the first request</Button>
+              <Button className="bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg transition-all duration-300">
+                Submit the first request
+              </Button>
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {marketRequests.map(request => (
-              <div key={request.id} className="market-request-card animate-fade-in backdrop-blur-sm bg-card/80 border border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300">
+              <div 
+                key={request.id} 
+                className="bg-card/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 rounded-xl p-6"
+              >
                 <div className="flex justify-between mb-3">
                   <span className={getStatusBadgeClass(request.status)}>
                     {getStatusText(request.status)}
@@ -240,7 +247,7 @@ const MarketRequests = () => {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-semibold mb-2">{request.question}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">{request.question}</h3>
                 <p className="text-muted-foreground mb-4 line-clamp-2">{request.description}</p>
 
                 <div className="flex justify-between items-center">
@@ -251,10 +258,14 @@ const MarketRequests = () => {
 
                   <button
                     onClick={() => handleUpvote(request.id)}
-                    className={`upvote-button ${request.has_upvoted ? 'upvote-button-active' : 'upvote-button-inactive'}`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                      request.has_upvoted
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                    }`}
                   >
                     <ArrowUp className="h-4 w-4" />
-                    <span>{request.upvotes || 0}</span>
+                    <span className="font-medium">{request.upvotes || 0}</span>
                   </button>
                 </div>
 
