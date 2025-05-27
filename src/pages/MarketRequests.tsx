@@ -23,9 +23,7 @@ const MarketRequests = () => {
         .from('market_requests')
         .select(`
           *,
-          profiles:requested_by (
-            username
-          )
+          profiles!inner(username)
         `);
 
       if (error) {
@@ -34,7 +32,13 @@ const MarketRequests = () => {
       }
 
       console.log("Market requests data:", data);
-      return data || [];
+      
+      // Transform the data to match our MarketRequest type
+      return (data || []).map(request => ({
+        ...request,
+        upvotes: request.upvotes || 0,
+        profiles: Array.isArray(request.profiles) ? request.profiles[0] : request.profiles
+      }));
     }
   });
 
