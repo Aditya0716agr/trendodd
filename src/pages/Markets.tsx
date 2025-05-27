@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -6,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, ArrowUpDown, Search } from "lucide-react";
-import { Market, MarketCategory, MarketStatus } from "@/types/market";
+import { Market, MarketCategory } from "@/types/market";
 import { getMarkets } from "@/services/market";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,14 +29,12 @@ const Markets = () => {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [filteredMarkets, setFilteredMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchMarkets = async () => {
       setIsLoading(true);
       try {
         const marketData = await getMarkets();
-        // Add type assertion to fix the type error
         setMarkets(marketData as Market[]);
         toast.success("Markets loaded successfully");
       } catch (error) {
@@ -51,7 +47,6 @@ const Markets = () => {
 
     fetchMarkets();
 
-    // Set up realtime subscription for market updates
     const marketChannel = supabase
       .channel('market-price-updates')
       .on('postgres_changes', {
@@ -116,36 +111,32 @@ const Markets = () => {
 
   const MarketCard = ({ market }: { market: Market }) => (
     <Link to={`/market/${market.id}`} key={market.id} className="block hover:no-underline">
-      <div className="market-card bg-card border rounded-lg p-5 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center animate-fade-in">
-        <div className="flex-grow mb-4 md:mb-0 md:mr-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium capitalize">
+      <div className="market-card flex flex-col md:flex-row md:items-center">
+        <div className="flex-grow mb-4 md:mb-0 md:mr-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="status-badge status-badge-pending capitalize">
               {market.category}
             </span>
-            <div className="flex items-center text-xs text-muted-foreground gap-1">
-              <Clock className="h-3 w-3" />
+            <div className="flex items-center text-sm text-muted-foreground gap-1">
+              <Clock className="h-4 w-4" />
               <span>{formatTimeRemaining(market.closeDate)}</span>
             </div>
           </div>
-          <h3 className="text-lg font-semibold">{market.question}</h3>
+          <h3 className="heading-3">{market.question}</h3>
         </div>
         
-        <div className="flex items-center gap-6 md:gap-8">
+        <div className="flex items-center gap-8">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">Current Prices</div>
-            <div className="flex gap-3">
-              <div>
-                <span className="font-medium text-green-600">Yes: {Math.round(market.yesPrice * 100)}¢</span>
-              </div>
-              <div>
-                <span className="font-medium text-red-600">No: {Math.round(market.noPrice * 100)}¢</span>
-              </div>
+            <div className="text-sm text-muted-foreground mb-2">Current Prices</div>
+            <div className="flex gap-4">
+              <span className="font-semibold text-green-600">Yes: {Math.round(market.yesPrice * 100)}¢</span>
+              <span className="font-semibold text-red-600">No: {Math.round(market.noPrice * 100)}¢</span>
             </div>
           </div>
           
           <div className="text-right">
-            <div className="text-xs text-muted-foreground mb-1">Volume</div>
-            <div className="font-medium">
+            <div className="text-sm text-muted-foreground mb-2">Volume</div>
+            <div className="font-semibold">
               {market.volume > 1000 
                 ? `${(market.volume / 1000).toFixed(1)}K` 
                 : market.volume.toFixed(0)}
@@ -157,14 +148,14 @@ const Markets = () => {
   );
 
   const MarketSkeleton = () => (
-    <div className="market-card border rounded-lg p-5 animate-pulse">
+    <div className="market-card animate-pulse">
       <div className="flex flex-col md:flex-row md:items-center">
-        <div className="flex-grow mb-4 md:mb-0 md:mr-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Skeleton className="h-5 w-16" />
+        <div className="flex-grow mb-4 md:mb-0 md:mr-6">
+          <div className="flex items-center gap-3 mb-3">
+            <Skeleton className="h-6 w-16" />
             <Skeleton className="h-4 w-20" />
           </div>
-          <Skeleton className="h-6 w-full max-w-md" />
+          <Skeleton className="h-7 w-full max-w-md" />
         </div>
         <div className="flex items-center gap-8">
           <div>
@@ -182,19 +173,19 @@ const Markets = () => {
 
   return (
     <Layout>
-      <div className="container py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in">
+      <div className="container section-spacing container-padding">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
-            <h1 className="text-3xl font-bold">Explore Markets</h1>
-            <p className="text-muted-foreground">Discover and trade on prediction markets</p>
+            <h1 className="heading-2 mb-3">Explore Markets</h1>
+            <p className="body-large">Discover and trade on prediction markets</p>
           </div>
           
-          <div className="relative w-full md:w-64">
+          <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search markets..."
-              className="pl-9"
+              className="pl-10 rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -202,37 +193,37 @@ const Markets = () => {
         </div>
         
         <Tabs defaultValue="all" className="mb-8" onValueChange={(value) => setActiveCategory(value as MarketCategory | "all")}>
-          <TabsList className="mb-6 flex flex-wrap h-auto animate-fade-in">
-            <TabsTrigger value="all" className="transition-all duration-200">All Markets</TabsTrigger>
+          <TabsList className="mb-8 flex flex-wrap h-auto bg-muted/50 p-1 rounded-xl">
+            <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-background">All Markets</TabsTrigger>
             {marketCategories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="transition-all duration-200">
+              <TabsTrigger key={category.id} value={category.id} className="rounded-lg data-[state=active]:bg-background">
                 {category.name}
               </TabsTrigger>
             ))}
           </TabsList>
           
-          <div className="flex justify-end mb-4 gap-2 animate-fade-in">
+          <div className="flex justify-end mb-6 gap-3">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1 transition-colors duration-200 hover:bg-primary/10"
+              className="gap-2 rounded-xl"
               onClick={() => toggleSort("volume")}
             >
               Volume
-              <ArrowUpDown className="h-3 w-4" />
+              <ArrowUpDown className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1 transition-colors duration-200 hover:bg-primary/10"
+              className="gap-2 rounded-xl"
               onClick={() => toggleSort("closeDate")}
             >
               Closing Date
-              <ArrowUpDown className="h-3 w-4" />
+              <ArrowUpDown className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="single-column-grid">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <MarketSkeleton key={index} />
@@ -242,8 +233,8 @@ const Markets = () => {
                 <MarketCard key={market.id} market={market} />
               ))
             ) : (
-              <div className="text-center py-12 border rounded-lg bg-muted/50 animate-fade-in">
-                <p className="text-muted-foreground">No markets found matching your criteria.</p>
+              <div className="text-center py-16 market-card">
+                <p className="body-large">No markets found matching your criteria.</p>
               </div>
             )}
           </div>

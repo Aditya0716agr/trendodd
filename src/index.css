@@ -8,141 +8,151 @@
     @apply antialiased;
   }
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 96.9%;
+    --foreground: 240 10% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 240 10% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 178 100% 18.6%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-foreground: 240 10% 11%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 350 100% 94.1%;
+    --accent-foreground: 240 10% 11%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 178 100% 18.6%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
-    --market-yes: 144 62% 65%; /* green */
-    --market-no: 0 84% 70%;    /* red */
+    --market-yes: 178 30% 70%;
+    --market-no: 0 50% 65%;
+
+    --success: 140 30% 68%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 10% 11%;
+    --sidebar-primary: 178 100% 18.6%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 350 100% 94.1%;
+    --sidebar-accent-foreground: 240 10% 11%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 178 100% 18.6%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 240 10% 11%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 13%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 13%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 178 100% 25%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 98%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 350 50% 20%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 178 100% 25%;
+
+    --success: 140 40% 45%;
+    --sidebar-background: 240 10% 13%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 178 100% 25%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 350 50% 20%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 178 100% 25%;
   }
   
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
 }
 
+/* Clean, minimal card styles */
 .market-card {
-  @apply bg-card border rounded-lg p-5 shadow-sm hover:shadow-lg transition-all duration-300;
+  @apply bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200;
 }
 
-/* Premium UI Components */
-.glass-card {
-  @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-xl;
+/* Professional button styles */
+.professional-button {
+  @apply rounded-xl bg-primary text-primary-foreground font-semibold px-6 py-3
+    transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
 }
 
-.premium-text-gradient {
-  @apply bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent;
+/* Clean status badges */
+.status-badge {
+  @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium;
 }
 
-.premium-button {
-  @apply rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium px-4 py-2
-    transition-all duration-300 hover:shadow-lg hover:scale-105;
+.status-badge-pending {
+  @apply bg-yellow-50 text-yellow-700 border border-yellow-200;
 }
 
-.premium-coin {
-  @apply relative w-16 h-16 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-500
-    flex items-center justify-center shadow-lg overflow-hidden
-    transition-all duration-300 hover:shadow-xl hover:scale-105 hover:-translate-y-1;
+.status-badge-approved {
+  @apply bg-green-50 text-green-700 border border-green-200;
 }
 
-.premium-coin::after {
-  content: '';
-  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 transition-opacity;
+.status-badge-rejected {
+  @apply bg-red-50 text-red-700 border border-red-200;
 }
 
-.premium-coin:hover::after {
-  @apply opacity-100;
-  animation: shine 1.5s infinite;
+/* Simplified upvote button */
+.upvote-button {
+  @apply flex items-center gap-2 text-sm font-medium rounded-xl px-4 py-2 transition-all duration-200;
 }
 
-@keyframes shine {
-  0% {
-    background-position: -100% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+.upvote-button-active {
+  @apply bg-primary/10 text-primary border border-primary/20;
 }
 
-.premium-brand-card {
-  @apply relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm
-    transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+.upvote-button-inactive {
+  @apply hover:bg-muted bg-card border border-border hover:border-primary/30;
 }
 
-.premium-brand-card::before {
-  content: '';
-  @apply absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 opacity-0 blur transition-opacity rounded-xl -z-10;
+/* Clean navigation styles */
+.nav-link {
+  @apply text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-muted/50;
 }
 
-.premium-brand-card:hover::before {
-  @apply opacity-70;
+.nav-link-active {
+  @apply text-primary bg-primary/5 hover:bg-primary/10;
 }
 
-.premium-brand-logo {
-  @apply h-10 object-contain mb-4;
-}
-
-/* Enhanced animations */
-@keyframes fadeIn {
+/* Refined animations - minimal and functional only */
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -151,65 +161,65 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fade-in 0.3s ease-out forwards;
 }
 
-@keyframes floatAnimation {
-  0%, 100% {
-    transform: translateY(0);
+/* Remove all coin animations and excessive effects */
+.premium-coin,
+.premium-coin-shine,
+.animate-float,
+.animate-pulse-glow,
+.pulse-elegant,
+.gradient-text {
+  display: none;
+}
+
+/* Clean, professional grid layouts */
+.content-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.single-column-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+/* Professional spacing system */
+.section-spacing {
+  @apply py-12 md:py-16;
+}
+
+.container-padding {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+/* Typography hierarchy */
+.heading-1 {
+  @apply text-4xl md:text-5xl font-bold tracking-tight text-foreground;
+}
+
+.heading-2 {
+  @apply text-3xl md:text-4xl font-bold tracking-tight text-foreground;
+}
+
+.heading-3 {
+  @apply text-2xl md:text-3xl font-semibold tracking-tight text-foreground;
+}
+
+.body-large {
+  @apply text-lg text-muted-foreground leading-relaxed;
+}
+
+.body-base {
+  @apply text-base text-muted-foreground leading-normal;
+}
+
+/* Mobile-first responsive utilities */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none;
   }
-  50% {
-    transform: translateY(-10px);
+  
+  .mobile-stack {
+    @apply flex-col space-y-4;
   }
-}
-
-.animate-float {
-  animation: floatAnimation 3s ease-in-out infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(79, 70, 229, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(79, 70, 229, 0.6);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 2s ease-in-out infinite;
-}
-
-/* Upvote button styles */
-.upvote-button {
-  @apply flex items-center gap-1 text-sm font-medium rounded-full px-3 py-1.5 transition-all duration-300;
-}
-
-.upvote-button-active {
-  @apply bg-primary/20 text-primary;
-}
-
-.upvote-button-inactive {
-  @apply hover:bg-primary/10 bg-secondary;
-}
-
-/* Market request card styles */
-.market-request-card {
-  @apply bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300;
-}
-
-.market-request-badge {
-  @apply px-2 py-1 rounded text-xs font-medium;
-}
-
-.market-request-badge-pending {
-  @apply bg-yellow-100 text-yellow-800;
-}
-
-.market-request-badge-approved {
-  @apply bg-green-100 text-green-800;
-}
-
-.market-request-badge-rejected {
-  @apply bg-red-100 text-red-800;
 }

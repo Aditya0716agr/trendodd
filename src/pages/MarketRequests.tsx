@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { MarketRequest } from "@/types/market";
@@ -78,7 +79,7 @@ const MarketRequests = () => {
     fetchMarketRequests();
   }, [toast]);
 
-  // Handle upvote
+  // Handle upvote with simplified state update
   const handleUpvote = async (requestId: string) => {
     if (!user) {
       toast({
@@ -103,28 +104,12 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Update state with explicit array creation
-        const updatedRequests = marketRequests.map(request => {
-          if (request.id === requestId) {
-            return {
-              id: request.id,
-              question: request.question,
-              description: request.description,
-              category: request.category,
-              close_date: request.close_date,
-              requested_by: request.requested_by,
-              created_at: request.created_at,
-              status: request.status,
-              rejection_reason: request.rejection_reason,
-              market_id: request.market_id,
-              upvotes: Math.max(0, (request.upvotes || 0) - 1),
-              has_upvoted: false,
-              profiles: request.profiles
-            } as MarketRequest;
-          }
-          return request;
-        });
-        setMarketRequests(updatedRequests);
+        // Simplified state update
+        setMarketRequests(prev => prev.map(request => 
+          request.id === requestId 
+            ? { ...request, upvotes: Math.max(0, request.upvotes - 1), has_upvoted: false }
+            : request
+        ));
 
         toast({
           title: "Upvote removed",
@@ -141,28 +126,12 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Update state with explicit array creation
-        const updatedRequests = marketRequests.map(request => {
-          if (request.id === requestId) {
-            return {
-              id: request.id,
-              question: request.question,
-              description: request.description,
-              category: request.category,
-              close_date: request.close_date,
-              requested_by: request.requested_by,
-              created_at: request.created_at,
-              status: request.status,
-              rejection_reason: request.rejection_reason,
-              market_id: request.market_id,
-              upvotes: (request.upvotes || 0) + 1,
-              has_upvoted: true,
-              profiles: request.profiles
-            } as MarketRequest;
-          }
-          return request;
-        });
-        setMarketRequests(updatedRequests);
+        // Simplified state update
+        setMarketRequests(prev => prev.map(request => 
+          request.id === requestId 
+            ? { ...request, upvotes: request.upvotes + 1, has_upvoted: true }
+            : request
+        ));
 
         toast({
           title: "Upvoted!",
@@ -179,45 +148,17 @@ const MarketRequests = () => {
     }
   };
 
-  // Helper to get status badge class
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status) {
-      case 'approved':
-        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200';
-      case 'rejected':
-        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200';
-      default:
-        return 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200';
-    }
-  };
-
-  // Helper to get status text
-  const getStatusText = (status?: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Approved';
-      case 'rejected':
-        return 'Rejected';
-      default:
-        return 'Pending';
-    }
-  };
-
   return (
     <Layout>
-      <div className="container py-8 md:py-12">
-        <div className="flex justify-between items-center mb-8">
+      <div className="container section-spacing container-padding">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-              Market Requests
-            </h1>
-            <p className="text-muted-foreground">
-              Browse and upvote community-requested prediction markets
-            </p>
+            <h1 className="heading-2 mb-3">Market Requests</h1>
+            <p className="body-large">Browse and upvote community-requested prediction markets</p>
           </div>
 
           <Link to="/request-market">
-            <Button className="gap-2 hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg">
+            <Button className="professional-button">
               <Plus className="h-4 w-4" />
               Submit Request
             </Button>
@@ -225,16 +166,16 @@ const MarketRequests = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="single-column-grid">
             {[1, 2, 3, 4].map((_, index) => (
               <div
                 key={index}
-                className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 animate-pulse"
+                className="market-card animate-pulse"
               >
-                <div className="h-6 w-20 bg-muted rounded mb-3"></div>
-                <div className="h-7 w-3/4 bg-muted rounded mb-2"></div>
+                <div className="h-6 w-20 bg-muted rounded mb-4"></div>
+                <div className="h-7 w-3/4 bg-muted rounded mb-3"></div>
                 <div className="h-4 w-full bg-muted rounded mb-2"></div>
-                <div className="h-4 w-2/3 bg-muted rounded mb-4"></div>
+                <div className="h-4 w-2/3 bg-muted rounded mb-6"></div>
                 <div className="flex justify-between items-center">
                   <div className="h-5 w-32 bg-muted rounded"></div>
                   <div className="h-8 w-20 bg-muted rounded"></div>
@@ -243,58 +184,61 @@ const MarketRequests = () => {
             ))}
           </div>
         ) : marketRequests.length === 0 ? (
-          <div className="text-center py-12 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm">
-            <p className="text-muted-foreground mb-4">No market requests found</p>
+          <div className="text-center py-16 market-card">
+            <p className="body-large mb-6">No market requests found</p>
             <Link to="/request-market">
-              <Button className="bg-gradient-to-r from-primary to-indigo-600 hover:shadow-lg transition-all duration-300">
+              <Button className="professional-button">
                 Submit the first request
               </Button>
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="single-column-grid">
             {marketRequests.map(request => (
               <div 
                 key={request.id} 
-                className="bg-card/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 rounded-xl p-6"
+                className="market-card"
               >
-                <div className="flex justify-between mb-3">
-                  <span className={getStatusBadgeClass(request.status)}>
-                    {getStatusText(request.status)}
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`status-badge ${
+                    request.status === 'approved' ? 'status-badge-approved' :
+                    request.status === 'rejected' ? 'status-badge-rejected' :
+                    'status-badge-pending'
+                  }`}>
+                    {request.status === 'approved' ? 'Approved' :
+                     request.status === 'rejected' ? 'Rejected' : 'Pending'}
                   </span>
 
                   <div className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 mr-1" />
+                    <Clock className="h-4 w-4" />
                     {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-semibold mb-2 text-foreground">{request.question}</h3>
-                <p className="text-muted-foreground mb-4 line-clamp-2">{request.description}</p>
+                <h3 className="heading-3 mb-3">{request.question}</h3>
+                <p className="body-base mb-6 line-clamp-2">{request.description}</p>
 
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <CalendarDays className="h-3.5 w-3.5" />
+                    <CalendarDays className="h-4 w-4" />
                     <span>Closes: {new Date(request.close_date).toLocaleDateString()}</span>
                   </div>
 
                   <button
                     onClick={() => handleUpvote(request.id)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 ${
-                      request.has_upvoted
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                    className={`upvote-button ${
+                      request.has_upvoted ? 'upvote-button-active' : 'upvote-button-inactive'
                     }`}
                   >
                     <ArrowUp className="h-4 w-4" />
-                    <span className="font-medium">{request.upvotes || 0}</span>
+                    <span className="font-semibold">{request.upvotes || 0}</span>
                   </button>
                 </div>
 
                 {request.status === 'approved' && request.market_id && (
-                  <div className="mt-4 text-right">
+                  <div className="mt-6 text-right">
                     <Link to={`/market/${request.market_id}`}>
-                      <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors duration-300">
+                      <Button variant="outline" size="sm" className="rounded-xl">
                         View Market
                       </Button>
                     </Link>
@@ -302,12 +246,12 @@ const MarketRequests = () => {
                 )}
 
                 {request.status === 'rejected' && request.rejection_reason && (
-                  <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                    Reason: {request.rejection_reason}
+                  <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-200">
+                    <strong>Reason:</strong> {request.rejection_reason}
                   </div>
                 )}
 
-                <div className="mt-3 text-xs text-muted-foreground">
+                <div className="mt-4 text-sm text-muted-foreground">
                   By {request.profiles?.username || "Anonymous"}
                 </div>
               </div>
