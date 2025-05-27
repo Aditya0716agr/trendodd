@@ -103,18 +103,28 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Update state without explicit typing
-        setMarketRequests(prevRequests => 
-          prevRequests.map(request => 
-            request.id === requestId 
-              ? { 
-                  ...request, 
-                  upvotes: Math.max(0, (request.upvotes || 0) - 1),
-                  has_upvoted: false 
-                }
-              : request
-          )
-        );
+        // Update state with explicit array creation
+        const updatedRequests = marketRequests.map(request => {
+          if (request.id === requestId) {
+            return {
+              id: request.id,
+              question: request.question,
+              description: request.description,
+              category: request.category,
+              close_date: request.close_date,
+              requested_by: request.requested_by,
+              created_at: request.created_at,
+              status: request.status,
+              rejection_reason: request.rejection_reason,
+              market_id: request.market_id,
+              upvotes: Math.max(0, (request.upvotes || 0) - 1),
+              has_upvoted: false,
+              profiles: request.profiles
+            } as MarketRequest;
+          }
+          return request;
+        });
+        setMarketRequests(updatedRequests);
 
         toast({
           title: "Upvote removed",
@@ -131,18 +141,28 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Update state without explicit typing
-        setMarketRequests(prevRequests => 
-          prevRequests.map(request => 
-            request.id === requestId 
-              ? { 
-                  ...request, 
-                  upvotes: (request.upvotes || 0) + 1,
-                  has_upvoted: true 
-                }
-              : request
-          )
-        );
+        // Update state with explicit array creation
+        const updatedRequests = marketRequests.map(request => {
+          if (request.id === requestId) {
+            return {
+              id: request.id,
+              question: request.question,
+              description: request.description,
+              category: request.category,
+              close_date: request.close_date,
+              requested_by: request.requested_by,
+              created_at: request.created_at,
+              status: request.status,
+              rejection_reason: request.rejection_reason,
+              market_id: request.market_id,
+              upvotes: (request.upvotes || 0) + 1,
+              has_upvoted: true,
+              profiles: request.profiles
+            } as MarketRequest;
+          }
+          return request;
+        });
+        setMarketRequests(updatedRequests);
 
         toast({
           title: "Upvoted!",
