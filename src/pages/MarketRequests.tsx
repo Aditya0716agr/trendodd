@@ -103,19 +103,18 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Create new array with updated request - explicitly type the update
-        const updatedRequests: MarketRequest[] = marketRequests.map(request => {
-          if (request.id === requestId) {
-            const updatedRequest: MarketRequest = {
-              ...request,
-              upvotes: Math.max(0, (request.upvotes || 0) - 1),
-              has_upvoted: false
-            };
-            return updatedRequest;
-          }
-          return request;
-        });
-        setMarketRequests(updatedRequests);
+        // Update state without explicit typing
+        setMarketRequests(prevRequests => 
+          prevRequests.map(request => 
+            request.id === requestId 
+              ? { 
+                  ...request, 
+                  upvotes: Math.max(0, (request.upvotes || 0) - 1),
+                  has_upvoted: false 
+                }
+              : request
+          )
+        );
 
         toast({
           title: "Upvote removed",
@@ -132,19 +131,18 @@ const MarketRequests = () => {
 
         if (error) throw error;
 
-        // Create new array with updated request - explicitly type the update
-        const updatedRequests: MarketRequest[] = marketRequests.map(request => {
-          if (request.id === requestId) {
-            const updatedRequest: MarketRequest = {
-              ...request,
-              upvotes: (request.upvotes || 0) + 1,
-              has_upvoted: true
-            };
-            return updatedRequest;
-          }
-          return request;
-        });
-        setMarketRequests(updatedRequests);
+        // Update state without explicit typing
+        setMarketRequests(prevRequests => 
+          prevRequests.map(request => 
+            request.id === requestId 
+              ? { 
+                  ...request, 
+                  upvotes: (request.upvotes || 0) + 1,
+                  has_upvoted: true 
+                }
+              : request
+          )
+        );
 
         toast({
           title: "Upvoted!",
