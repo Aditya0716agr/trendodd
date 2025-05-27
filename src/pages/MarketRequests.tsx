@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -9,8 +10,10 @@ import { Search, ThumbsUp, Clock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MarketRequest } from "@/types/market";
+import { useAuth } from "@/hooks/use-auth";
 
 const MarketRequests = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredRequests, setFilteredRequests] = useState<MarketRequest[]>([]);
 
@@ -23,8 +26,10 @@ const MarketRequests = () => {
         .from('market_requests')
         .select(`
           *,
-          profiles!inner(username)
-        `);
+          profiles!market_requests_requested_by_fkey(username)
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching market requests:", error);
@@ -66,6 +71,11 @@ const MarketRequests = () => {
   }, [searchQuery, marketRequests]);
 
   const handleUpvote = async (requestId: string) => {
+    if (!user) {
+      toast.error("Please sign in to upvote market requests");
+      return;
+    }
+
     try {
       // This would need proper implementation with user authentication
       toast.success("Feature coming soon!");
@@ -113,9 +123,9 @@ const MarketRequests = () => {
         <div className="min-h-screen bg-background">
           <div className="container section-spacing container-padding">
             <div className="text-center mb-12">
-              <h1 className="heading-1 mb-4">Market Requests</h1>
+              <h1 className="heading-1 mb-4">Community Market Ideas</h1>
               <p className="body-large max-w-2xl mx-auto">
-                Loading market requests...
+                Loading community-submitted market ideas...
               </p>
             </div>
           </div>
@@ -130,9 +140,9 @@ const MarketRequests = () => {
         <div className="container section-spacing container-padding">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="heading-1 mb-4">Market Requests</h1>
+            <h1 className="heading-1 mb-4">Community Market Ideas</h1>
             <p className="body-large max-w-2xl mx-auto">
-              Browse and vote on community-submitted market ideas
+              Browse and vote on community-submitted market ideas. {!user && "Sign in to upvote your favorites!"}
             </p>
           </div>
           
@@ -142,7 +152,7 @@ const MarketRequests = () => {
               <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search market requests..."
+                placeholder="Search market ideas..."
                 className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary bg-card"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -153,7 +163,7 @@ const MarketRequests = () => {
           {/* Results Count */}
           <div className="mb-6">
             <p className="text-sm text-muted-foreground">
-              {filteredRequests.length} request{filteredRequests.length !== 1 ? 's' : ''} found
+              {filteredRequests.length} idea{filteredRequests.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
@@ -204,6 +214,7 @@ const MarketRequests = () => {
                         size="sm"
                         className="upvote-button upvote-button-inactive hover:bg-primary/10 border-border"
                         onClick={() => handleUpvote(request.id)}
+                        disabled={!user}
                       >
                         <ThumbsUp className="h-4 w-4" />
                         <span>0</span>
@@ -216,8 +227,13 @@ const MarketRequests = () => {
               <div className="text-center py-16">
                 <Card className="market-card p-12 border-border bg-card">
                   <div className="text-6xl mb-4">💡</div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">No requests found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search criteria or check back later for new requests.</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No ideas found</h3>
+                  <p className="text-muted-foreground">Try adjusting your search criteria or check back later for new community ideas.</p>
+                  {!user && (
+                    <p className="text-muted-foreground mt-2">
+                      <a href="/request-market" className="text-primary hover:underline">Submit your own market idea</a> to get started!
+                    </p>
+                  )}
                 </Card>
               </div>
             )}
