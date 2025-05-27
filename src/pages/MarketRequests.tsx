@@ -36,7 +36,6 @@ const MarketRequests = () => {
       // Transform the data to match our MarketRequest type
       return (data || []).map(request => ({
         ...request,
-        upvotes: request.upvotes || 0,
         profiles: Array.isArray(request.profiles) ? request.profiles[0] : request.profiles
       }));
     }
@@ -207,7 +206,7 @@ const MarketRequests = () => {
                         onClick={() => handleUpvote(request.id)}
                       >
                         <ThumbsUp className="h-4 w-4" />
-                        <span>{request.upvotes || 0}</span>
+                        <span>0</span>
                       </Button>
                     </div>
                   </CardContent>
