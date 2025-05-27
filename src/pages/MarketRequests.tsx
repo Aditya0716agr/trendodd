@@ -34,14 +34,15 @@ const MarketRequests = () => {
 
         if (data) {
           const transformedData: MarketRequest[] = data.map(request => {
-            // Safely handle profiles data
+            // Safely handle profiles data with proper null checking
             let username = "Anonymous";
-            if (request.profiles && 
-                request.profiles !== null && 
-                typeof request.profiles === "object" && 
-                'username' in request.profiles && 
-                typeof request.profiles.username === 'string') {
-              username = request.profiles.username;
+            if (request.profiles) {
+              if (Array.isArray(request.profiles) && request.profiles.length > 0) {
+                username = request.profiles[0]?.username || "Anonymous";
+              } else if (typeof request.profiles === "object" && request.profiles !== null) {
+                const profileObj = request.profiles as { username?: string };
+                username = profileObj.username || "Anonymous";
+              }
             }
             
             return {
