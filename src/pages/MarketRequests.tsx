@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -23,27 +22,36 @@ const MarketRequests = () => {
     queryFn: async (): Promise<MarketRequest[]> => {
       console.log("Fetching market requests...");
       
-      const { data, error } = await supabase
+      // First get market requests
+      const { data: requests, error: requestsError } = await supabase
         .from('market_requests')
-        .select(`
-          *,
-          profiles!market_requests_requested_by_fkey(username)
-        `)
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching market requests:", error);
-        throw error;
+      if (requestsError) {
+        console.error("Error fetching market requests:", requestsError);
+        throw requestsError;
       }
 
-      console.log("Market requests data:", data);
-      
-      // Transform the data to match our MarketRequest type
-      return (data || []).map(request => ({
-        ...request,
-        profiles: Array.isArray(request.profiles) ? request.profiles[0] : request.profiles
-      }));
+      // Then get profiles for each request
+      const requestsWithProfiles = await Promise.all(
+        (requests || []).map(async (request) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', request.requested_by)
+            .single();
+
+          return {
+            ...request,
+            profiles: profile
+          };
+        })
+      );
+
+      console.log("Market requests data:", requestsWithProfiles);
+      return requestsWithProfiles;
     }
   });
 
