@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Market, MarketCategory } from "@/types/market";
 import { getMarkets } from "@/services/market";
