@@ -49,7 +49,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="border-b bg-background sticky top-0 z-50 backdrop-blur-sm">
+    <header className="navbar-sticky">
       <div className="container flex h-16 items-center justify-between container-padding">
         <div className="flex items-center gap-8">
           <NavbarBranding />
@@ -72,16 +72,16 @@ const Navbar = () => {
                     More
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-[240px] gap-2 p-4">
+                    <ul className="grid w-[280px] gap-3 p-6 bg-card/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-lg">
                       <li>
                         <NavigationMenuLink asChild>
                           <Link
                             to="/request-market"
-                            className="block select-none space-y-1 rounded-lg p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                            className="block select-none space-y-2 rounded-xl p-4 leading-none no-underline outline-none transition-all duration-300 hover:bg-accent/50 hover:text-accent-foreground group"
                           >
-                            <div className="text-sm font-semibold">Request Idea</div>
+                            <div className="text-sm font-semibold group-hover:text-primary transition-colors">Request Idea</div>
                             <p className="text-sm leading-snug text-muted-foreground">
-                              Submit your market ideas
+                              Submit your market ideas to the community
                             </p>
                           </Link>
                         </NavigationMenuLink>
@@ -92,11 +92,11 @@ const Navbar = () => {
                             <NavigationMenuLink asChild>
                               <Link
                                 to="/dashboard"
-                                className="block select-none space-y-1 rounded-lg p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                                className="block select-none space-y-2 rounded-xl p-4 leading-none no-underline outline-none transition-all duration-300 hover:bg-accent/50 hover:text-accent-foreground group"
                               >
-                                <div className="text-sm font-semibold">Dashboard</div>
+                                <div className="text-sm font-semibold group-hover:text-primary transition-colors">Dashboard</div>
                                 <p className="text-sm leading-snug text-muted-foreground">
-                                  View your account dashboard
+                                  View your trading dashboard
                                 </p>
                               </Link>
                             </NavigationMenuLink>
@@ -105,11 +105,11 @@ const Navbar = () => {
                             <NavigationMenuLink asChild>
                               <Link
                                 to="/redeem"
-                                className="block select-none space-y-1 rounded-lg p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                                className="block select-none space-y-2 rounded-xl p-4 leading-none no-underline outline-none transition-all duration-300 hover:bg-accent/50 hover:text-accent-foreground group"
                               >
-                                <div className="text-sm font-semibold">Redeem</div>
+                                <div className="text-sm font-semibold group-hover:text-primary transition-colors">Redeem</div>
                                 <p className="text-sm leading-snug text-muted-foreground">
-                                  Redeem your earned points
+                                  Redeem your earned rewards
                                 </p>
                               </Link>
                             </NavigationMenuLink>
@@ -130,28 +130,28 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <div className="flex items-center mr-3 bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
-                  <span className="text-sm font-medium mr-3 text-foreground">{user.email}</span>
-                  <div className="flex items-center gap-1 text-primary">
+                <div className="flex items-center mr-4 bg-primary/5 px-4 py-2.5 rounded-xl border border-primary/20 backdrop-blur-sm">
+                  <span className="text-sm font-semibold mr-4 text-foreground">{user.email}</span>
+                  <div className="flex items-center gap-2 text-primary">
                     <Coins className="h-4 w-4" />
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-bold">
                       {formatBalance(user.user_metadata?.wallet_balance || 1000)}
                     </span>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className="rounded-xl">
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="rounded-xl font-medium">
                   Logout
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm" className="rounded-xl">
+                  <Button variant="ghost" size="sm" className="rounded-xl font-medium">
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="sm" className="professional-button">Register</Button>
+                  <Button size="sm" className="professional-button">Get Started</Button>
                 </Link>
               </>
             )}
@@ -163,15 +163,15 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
+      {/* Mobile menu with enhanced styling */}
       {isMenuOpen && (
-        <div className="md:hidden border-t bg-background">
-          <div className="container container-padding py-4 flex flex-col gap-3">
+        <div className="md:hidden border-t border-border/50 bg-card/95 backdrop-blur-md">
+          <div className="container container-padding py-6 flex flex-col gap-4">
             {navItems.map((item) => (
               <Link 
                 key={item.path}
                 to={item.path} 
-                className={`nav-link ${isActive(item.path) ? "nav-link-active" : ""}`}
+                className={`nav-link ${isActive(item.path) ? "nav-link-active" : ""} text-base`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -180,7 +180,7 @@ const Navbar = () => {
             
             <Link 
               to="/request-market"
-              className="nav-link"
+              className="nav-link text-base"
               onClick={() => setIsMenuOpen(false)}
             >
               Request Idea
@@ -190,14 +190,14 @@ const Navbar = () => {
               <>
                 <Link 
                   to="/dashboard"
-                  className={`nav-link ${isActive("/dashboard") ? "nav-link-active" : ""}`}
+                  className={`nav-link ${isActive("/dashboard") ? "nav-link-active" : ""} text-base`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
                 </Link>
                 <Link 
                   to="/redeem"
-                  className={`nav-link ${isActive("/redeem") ? "nav-link-active" : ""}`}
+                  className={`nav-link ${isActive("/redeem") ? "nav-link-active" : ""} text-base`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Redeem
@@ -205,30 +205,30 @@ const Navbar = () => {
               </>
             )}
             
-            <div className="border-t my-3"></div>
+            <div className="border-t border-border/50 my-4"></div>
             
             {user ? (
               <>
-                <div className="px-3 py-2">
-                  <div className="font-semibold text-sm">{user.email}</div>
-                  <div className="flex items-center gap-1 mt-1 text-primary">
-                    <Coins className="h-4 w-4" />
-                    <span className="text-sm font-semibold">
+                <div className="px-4 py-3 bg-primary/5 rounded-xl border border-primary/20">
+                  <div className="font-semibold text-base mb-2">{user.email}</div>
+                  <div className="flex items-center gap-2 text-primary">
+                    <Coins className="h-5 w-5" />
+                    <span className="text-base font-bold">
                       {formatBalance(user.user_metadata?.wallet_balance || 1000)} coins
                     </span>
                   </div>
                 </div>
-                <Button variant="ghost" onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="justify-start rounded-xl">
+                <Button variant="ghost" onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="justify-start rounded-xl text-base">
                   Logout
                 </Button>
               </>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" className="w-full rounded-xl">Sign In</Button>
+                  <Button variant="outline" className="w-full rounded-xl text-base">Sign In</Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button className="w-full professional-button">Register</Button>
+                  <Button className="w-full professional-button text-base">Get Started</Button>
                 </Link>
               </div>
             )}

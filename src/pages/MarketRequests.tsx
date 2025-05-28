@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -122,9 +121,9 @@ const MarketRequests = () => {
       <Layout>
         <div className="min-h-screen bg-background">
           <div className="container section-spacing container-padding">
-            <div className="text-center mb-12">
-              <h1 className="heading-1 mb-4">Community Market Ideas</h1>
-              <p className="body-large max-w-2xl mx-auto">
+            <div className="text-center mb-16">
+              <h1 className="heading-1 mb-6">Community Market Ideas</h1>
+              <p className="body-large max-w-3xl mx-auto">
                 Loading community-submitted market ideas...
               </p>
             </div>
@@ -138,22 +137,22 @@ const MarketRequests = () => {
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="container section-spacing container-padding">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="heading-1 mb-4">Community Market Ideas</h1>
-            <p className="body-large max-w-2xl mx-auto">
-              Browse and vote on community-submitted market ideas. {!user && "Sign in to upvote your favorites!"}
+          {/* Enhanced Header */}
+          <div className="text-center mb-16">
+            <h1 className="heading-1 mb-6">Community Market Ideas</h1>
+            <p className="body-large max-w-3xl mx-auto">
+              Browse and vote on community-submitted market ideas. Help shape the future of our prediction markets. {!user && "Sign in to upvote your favorites and submit your own ideas!"}
             </p>
           </div>
           
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-8">
+          {/* Enhanced Search Bar */}
+          <div className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search market ideas..."
-                className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary bg-card"
+                className="search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -161,27 +160,27 @@ const MarketRequests = () => {
           </div>
 
           {/* Results Count */}
-          <div className="mb-6">
+          <div className="mb-8">
             <p className="text-sm text-muted-foreground">
-              {filteredRequests.length} idea{filteredRequests.length !== 1 ? 's' : ''} found
+              <span className="font-semibold">{filteredRequests.length}</span> idea{filteredRequests.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
-          {/* Market Requests */}
+          {/* Enhanced Market Requests */}
           <div className="space-y-6">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((request) => (
-                <Card key={request.id} className="market-card hover:shadow-lg transition-all duration-200 border-border bg-card">
+                <Card key={request.id} className="market-card">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <Badge className={`${getCategoryColor(request.category)} border`}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <Badge className={`status-badge ${getCategoryColor(request.category)} border`}>
                             {request.category.charAt(0).toUpperCase() + request.category.slice(1)}
                           </Badge>
                           {getStatusBadge(request.status)}
                         </div>
-                        <CardTitle className="text-xl font-semibold text-foreground leading-tight">
+                        <CardTitle className="text-2xl font-bold text-foreground leading-tight">
                           {request.question}
                         </CardTitle>
                       </div>
@@ -189,21 +188,21 @@ const MarketRequests = () => {
                   </CardHeader>
                   
                   <CardContent className="pt-0">
-                    <CardDescription className="body-base mb-4 leading-relaxed text-muted-foreground">
+                    <CardDescription className="body-base mb-6 leading-relaxed text-muted-foreground">
                       {request.description}
                     </CardDescription>
                     
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          <span>{request.profiles?.username || 'Anonymous'}</span>
+                          <span className="font-medium">{request.profiles?.username || 'Anonymous'}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
                           <span>{formatDate(request.created_at)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
                           <span>Closes: {formatDate(request.close_date)}</span>
                         </div>
@@ -212,27 +211,36 @@ const MarketRequests = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="upvote-button upvote-button-inactive hover:bg-primary/10 border-border"
+                        className={`upvote-button ${user ? 'upvote-button-inactive' : 'upvote-button-inactive'}`}
                         onClick={() => handleUpvote(request.id)}
                         disabled={!user}
                       >
                         <ThumbsUp className="h-4 w-4" />
-                        <span>0</span>
+                        <span className="font-semibold">0</span>
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="text-center py-16">
-                <Card className="market-card p-12 border-border bg-card">
-                  <div className="text-6xl mb-4">💡</div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">No ideas found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search criteria or check back later for new community ideas.</p>
-                  {!user && (
-                    <p className="text-muted-foreground mt-2">
-                      <a href="/request-market" className="text-primary hover:underline">Submit your own market idea</a> to get started!
-                    </p>
+              <div className="text-center py-20">
+                <Card className="market-card p-16 max-w-lg mx-auto">
+                  <div className="text-6xl mb-6">💡</div>
+                  <h3 className="heading-3 mb-4">No ideas found</h3>
+                  <p className="body-base mb-6">Try adjusting your search criteria or check back later for new community ideas.</p>
+                  {!user ? (
+                    <div className="space-y-4">
+                      <p className="body-base">
+                        <Link to="/request-market" className="text-primary hover:underline font-semibold">Submit your own market idea</Link> to get started!
+                      </p>
+                      <Button asChild className="professional-button">
+                        <Link to="/register">Join Community</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button asChild className="professional-button">
+                      <Link to="/request-market">Submit Idea</Link>
+                    </Button>
                   )}
                 </Card>
               </div>

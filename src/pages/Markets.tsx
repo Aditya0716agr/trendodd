@@ -92,23 +92,23 @@ const Markets = () => {
   };
 
   const MarketSkeleton = () => (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm animate-pulse">
+    <div className="market-card animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Skeleton className="h-6 w-6 rounded" />
-          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
         </div>
-        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-20" />
       </div>
       <div className="mb-6">
-        <Skeleton className="h-4 w-16 mb-2" />
-        <Skeleton className="h-6 w-full max-w-md" />
+        <Skeleton className="h-6 w-full max-w-md mb-2" />
+        <Skeleton className="h-4 w-32" />
       </div>
       <div className="flex items-end justify-between">
-        <Skeleton className="h-16 w-48 rounded-lg" />
+        <Skeleton className="h-20 w-64 rounded-lg" />
         <div className="text-right">
-          <Skeleton className="h-4 w-16 mb-1" />
-          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-4 w-16 mb-2" />
+          <Skeleton className="h-8 w-12" />
         </div>
       </div>
     </div>
@@ -118,42 +118,42 @@ const Markets = () => {
     <Layout>
       <div className="min-h-screen bg-background">
         <div className="container section-spacing container-padding">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="heading-1 mb-4">
-              Explore Markets
+          {/* Enhanced Header */}
+          <div className="text-center mb-16">
+            <h1 className="heading-1 mb-6">
+              Explore Prediction Markets
             </h1>
-            <p className="body-large max-w-2xl mx-auto">
-              Discover and trade on prediction markets
+            <p className="body-large max-w-3xl mx-auto">
+              Trade on real-world events with data-driven insights. Join thousands of traders making predictions on crypto, politics, sports, and more.
             </p>
           </div>
           
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-8">
+          {/* Enhanced Search Bar */}
+          <div className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search markets..."
-                className="pl-12 h-12 rounded-2xl border-border text-base shadow-sm focus:border-primary focus:ring-primary bg-card"
+                placeholder="Search prediction markets..."
+                className="search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="mb-8">
+          {/* Enhanced Category Filter */}
+          <div className="mb-12">
             <CategoryFilter 
               activeCategory={activeCategory}
               onCategoryChange={setActiveCategory}
             />
           </div>
 
-          {/* Sort Controls */}
+          {/* Enhanced Sort Controls */}
           <div className="flex justify-between items-center mb-8">
             <div className="text-sm text-muted-foreground">
-              {filteredMarkets.length} markets found
+              <span className="font-semibold">{filteredMarkets.length}</span> markets found
             </div>
             <SortControls
               sortField={sortField}
@@ -162,8 +162,8 @@ const Markets = () => {
             />
           </div>
 
-          {/* Markets Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Enhanced Markets Grid */}
+          <div className="market-grid">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, index) => (
                 <MarketSkeleton key={index} />
@@ -173,11 +173,14 @@ const Markets = () => {
                 <MarketCard key={market.id} market={market} />
               ))
             ) : (
-              <div className="col-span-full text-center py-16">
-                <div className="bg-card border border-border rounded-2xl p-12 shadow-sm">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">No markets found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search criteria or browse different categories.</p>
+              <div className="col-span-full text-center py-20">
+                <div className="market-card p-16 max-w-md mx-auto">
+                  <div className="text-6xl mb-6">🔍</div>
+                  <h3 className="heading-3 mb-4">No markets found</h3>
+                  <p className="body-base mb-6">Try adjusting your search criteria or browse different categories to discover new prediction markets.</p>
+                  <Button className="professional-button">
+                    Clear Filters
+                  </Button>
                 </div>
               </div>
             )}
