@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Market, MarketCategory, MarketStatus, PricePoint } from "@/types/market";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
+import { sanitizeMarketData, sanitizeInput } from "@/lib/sanitization";
 
 const enableRealtimeForMarkets = async () => {
   try {
@@ -164,13 +165,20 @@ export async function createMarket(market: Omit<Market, 'id' | 'priceHistory' | 
       return null;
     }
     
+    // Sanitize input data
+    const sanitizedData = sanitizeMarketData({
+      question: market.question,
+      description: market.description,
+      category: market.category
+    });
+    
     const { data, error } = await supabase
       .from("markets")
       .insert([
         {
-          question: market.question,
-          description: market.description,
-          category: market.category,
+          question: sanitizedData.question,
+          description: sanitizedData.description,
+          category: sanitizedData.category,
           yes_price: market.yesPrice,
           no_price: market.noPrice,
           volume: market.volume,
@@ -429,13 +437,20 @@ export async function submitMarketRequest(
       return null;
     }
     
+    // Sanitize input data
+    const sanitizedData = sanitizeMarketData({
+      question,
+      description,
+      category
+    });
+    
     const { data, error } = await supabase
       .from("market_requests")
       .insert([
         {
-          question,
-          description,
-          category,
+          question: sanitizedData.question,
+          description: sanitizedData.description,
+          category: sanitizedData.category,
           close_date: closeDate,
           requested_by: user.user.id,
           status: "pending"

@@ -14,7 +14,7 @@ const PriceHistoryBackfill = () => {
     try {
       toast.loading('Running price history backfill...');
       
-      const { data, error } = await supabase.functions.invoke('daily-price-update', {
+      const { data, error } = await supabase.functions.invoke('admin-price-update', {
         body: { backfill: true }
       });
 
@@ -42,7 +42,7 @@ const PriceHistoryBackfill = () => {
     try {
       toast.loading('Running daily price update...');
       
-      const { data, error } = await supabase.functions.invoke('daily-price-update');
+      const { data, error } = await supabase.functions.invoke('admin-price-update');
 
       if (error) {
         console.error('Daily update error:', error);

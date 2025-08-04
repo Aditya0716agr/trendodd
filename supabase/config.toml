@@ -53,3 +53,6 @@ enabled = true
 
 [functions.daily-price-update]
 verify_jwt = true
+
+[functions.admin-price-update]
+verify_jwt = true
