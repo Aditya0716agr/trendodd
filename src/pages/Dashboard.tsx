@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
-import AnalyticsDashboard from "@/components/dashboard/AnalyticsDashboard";
+import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
@@ -120,7 +120,13 @@ const Dashboard = () => {
         {/* Admin Section for Price History Management */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
-            <AnalyticsDashboard />
+            <AnalyticsDashboard
+              transactions={[]}
+              profitLoss={0}
+              winRate={0}
+              activePositions={0}
+              resolvedPositions={0}
+            />
           </div>
           <div>
             <PriceHistoryBackfill />

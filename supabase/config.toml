@@ -52,4 +52,4 @@ enable_confirmations = false
 enabled = true
 
 [functions.daily-price-update]
-verify_jwt = false
+verify_jwt = true

@@ -42,25 +42,14 @@ export async function signIn({ email, password }: UserCredentials) {
 
 export async function signUp({ email, password }: UserCredentials) {
   try {
-    // First, check if the user already exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .single();
-      
-    if (existingUser) {
-      toast({
-        title: "Sign up error",
-        description: "An account with this email already exists.",
-        variant: "destructive",
-      });
-      return { data: null, error: new Error("Account already exists") };
-    }
+    const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
     });
 
     if (error) {
